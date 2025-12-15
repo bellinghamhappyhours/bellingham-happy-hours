@@ -1,157 +1,171 @@
-import Papa from "papaparse";
 import { NextResponse } from "next/server";
+import Papa from "papaparse";
 import { HappyHourRow, DayOfWeek, HHType } from "../../../lib/types";
 
-type RawRow = Record<string, string | undefined>;
+type RawRow = {
+  venue_name?: string;
+  neighborhood?: string;
+  cuisine_tags?: string;
+  menu_url?: string;
+  website_url?: string;
+  day_of_week?: string;
+  start_time?: string;
+  end_time?: string;
+  type?: string;
+  notes?: string;
+  last_verified?: string;
+  deal_label?: string;
+};
 
-function normalizeDayToken(token: string): DayOfWeek | null {
-  const s = (token || "").trim().toLowerCase();
-  if (!s) return null;
+const DAY_MAP: Record<string, DayOfWeek> = {
+  Mon: "Mon",
+  Monday: "Mon",
+  Tue: "Tue",
+  Tuesday: "Tue",
+  Wed: "Wed",
+  Wednesday: "Wed",
+  Thu: "Thu",
+  Thursday: "Thu",
+  Fri: "Fri",
+  Friday: "Fri",
+  Sat: "Sat",
+  Saturday: "Sat",
+  Sun: "Sun",
+  Sunday: "Sun",
+};
 
-  const map: Record<string, DayOfWeek> = {
-    mon: "Mon",
-    monday: "Mon",
-    tue: "Tue",
-    tues: "Tue",
-    tuesday: "Tue",
-    wed: "Wed",
-    weds: "Wed",
-    wednesday: "Wed",
-    thu: "Thu",
-    thur: "Thu",
-    thurs: "Thu",
-    thursday: "Thu",
-    fri: "Fri",
-    friday: "Fri",
-    sat: "Sat",
-    saturday: "Sat",
-    sun: "Sun",
-    sunday: "Sun",
-  };
-
-  const cleaned = s.replace(/[^a-z]/g, "");
-  return map[cleaned] ?? null;
+function normalizeDay(raw: string | undefined): DayOfWeek | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  return DAY_MAP[trimmed] ?? null;
 }
 
-function parseDays(v: string): DayOfWeek[] {
-  const raw = (v || "").trim();
-  if (!raw) return [];
-
-  const tokens = raw.split(/[,\|\/]+/g).map((t) => t.trim()).filter(Boolean);
-  const tokens2 = tokens.length === 1 ? raw.split(/\s+/).map((t) => t.trim()).filter(Boolean) : tokens;
-
-  const days: DayOfWeek[] = [];
-  for (const tok of tokens2) {
-    const d = normalizeDayToken(tok);
-    if (d && !days.includes(d)) days.push(d);
-  }
-  return days;
-}
-
-function normalizeType(v: string): HHType {
-  const s = (v || "").trim().toLowerCase();
-
-  // Accept sheet values: Food / Drink / Both
-  if (s === "food") return "food";
-  if (s === "drink") return "drink";
-  if (s === "both") return "both";
-
-  // Accept a couple friendly variants
-  if (s === "food & drink" || s === "food and drink") return "both";
-
-  // Default
-  return "both";
-}
-
-function splitTags(v: string): string[] {
-  return (v || "")
-    .split(",")
-    .map((t) => t.trim())
-    .filter(Boolean);
-}
-
-function normalizeTime(v: string): string | null {
-  const s = (v || "").trim();
-  if (!s) return null;
-
-  if (/^close$/i.test(s)) return "23:59";
-
-  if (/^\d{1,2}:\d{2}$/.test(s)) {
-    const [hStr, mStr] = s.split(":");
-    const h = Number(hStr);
-    const m = Number(mStr);
-    if (Number.isFinite(h) && Number.isFinite(m) && h >= 0 && h <= 23 && m >= 0 && m <= 59) {
-      return `${h.toString().padStart(2, "0")}:${mStr}`;
-    }
-  }
-
+function normalizeType(raw: string | undefined): HHType | null {
+  if (!raw) return null;
+  const v = raw.trim().toLowerCase();
+  if (v === "food") return "food";
+  if (v === "drink") return "drink";
+  if (v === "both") return "both";
   return null;
 }
 
-function normalizeDealLabel(rawDeal: string, rawNotes: string): string {
-  const deal = (rawDeal || "").trim();
-  if (deal) return deal;
+function normalizeTime(raw: string | undefined): string | null {
+  if (!raw) return null;
+  const t = raw.trim().toLowerCase();
+  if (t === "close" || t === "closing") return "23:59"; // legacy safety
+  const m = t.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  const h = parseInt(m[1], 10);
+  const min = parseInt(m[2], 10);
+  if (Number.isNaN(h) || Number.isNaN(min)) return null;
+  const hh = String(h).padStart(2, "0");
+  const mm = String(min).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
 
-  // Back-compat: if you haven’t added deal_label yet, allow notes like "Late Night" to show up as label
-  const notes = (rawNotes || "").trim();
-  const lower = notes.toLowerCase();
-  const known = ["happy hour", "late night", "all day", "special", "taco tuesday", "pizza night"];
-  if (known.some((k) => lower === k)) return notes;
+function toHappyHourRows(rawRows: RawRow[]): HappyHourRow[] {
+  const rows: HappyHourRow[] = [];
 
-  return "";
+  rawRows.forEach((r, idx) => {
+    const venue = (r.venue_name || "").trim();
+    if (!venue) return;
+
+    const day = normalizeDay(r.day_of_week);
+    const type = normalizeType(r.type);
+    const start = normalizeTime(r.start_time);
+    const end = normalizeTime(r.end_time);
+
+    if (!day || !type || !start || !end) {
+      return;
+    }
+
+    const cuisines =
+      (r.cuisine_tags || "")
+        .split(/[;,]/)
+        .map((s) => s.trim())
+        .filter(Boolean) || [];
+
+    rows.push({
+      id: `${venue}-${day}-${start}-${idx}`,
+      venue_name: venue,
+      neighborhood: (r.neighborhood || "").trim(),
+      cuisine_tags: cuisines,
+      menu_url: r.menu_url || "",
+      website_url: r.website_url || "",
+      day_of_week: day,
+      start_time: start,
+      end_time: end,
+      type,
+      notes: r.notes || "",
+      last_verified: r.last_verified || "",
+      deal_label: r.deal_label || "",
+    });
+  });
+
+  return rows;
 }
 
 export async function GET() {
-  const url = process.env.SHEET_CSV_URL;
-  if (!url) return NextResponse.json({ error: "Missing SHEET_CSV_URL" }, { status: 500 });
+  try {
+    const url = process.env.SHEET_CSV_URL;
 
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) return NextResponse.json({ error: "Failed to fetch sheet CSV" }, { status: 502 });
-
-  const csv = await res.text();
-
-  const parsed = Papa.parse<RawRow>(csv, {
-    header: true,
-    skipEmptyLines: true,
-  });
-
-  const rows: HappyHourRow[] = [];
-
-  for (const r of parsed.data) {
-    const venue = (r.venue_name || "").trim();
-    const menu = (r.menu_url || "").trim();
-    const website = (r.website_url || "").trim();
-
-    const start = normalizeTime(r.start_time || "");
-    const end = normalizeTime(r.end_time || "");
-    const days = parseDays(r.day_of_week || "");
-
-    if (!venue || !menu || !start || !end || days.length === 0) continue;
-
-    const neighborhood = (r.neighborhood || "").trim();
-    const type = normalizeType(r.type || "");
-    const notes = (r.notes || "").trim();
-    const last_verified = (r.last_verified || "").trim();
-    const deal_label = normalizeDealLabel(r.deal_label || "", notes);
-
-    for (const day of days) {
-      rows.push({
-        id: `${venue}-${day}-${start}-${end}`.replace(/\s+/g, "-").toLowerCase(),
-        venue_name: venue,
-        neighborhood,
-        cuisine_tags: splitTags(r.cuisine_tags || ""),
-        menu_url: menu,
-        website_url: website,
-        day_of_week: day,
-        start_time: start,
-        end_time: end,
-        type,
-        deal_label: deal_label || undefined,
-        notes: notes || undefined,
-        last_verified: last_verified || undefined,
-      });
+    if (!url) {
+      return NextResponse.json(
+        { error: "SHEET_CSV_URL is not set in environment variables" },
+        { status: 500 }
+      );
     }
-  }
 
-  return NextResponse.json({ rows });
+    const res = await fetch(url);
+
+    if (!res.ok) {
+      // Show some detail to help debug (status + first 200 chars of body)
+      let bodySnippet = "";
+      try {
+        const bodyText = await res.text();
+        bodySnippet = bodyText.slice(0, 200);
+      } catch {
+        bodySnippet = "(could not read body text)";
+      }
+
+      return NextResponse.json(
+        {
+          error: "Sheet HTTP error",
+          status: res.status,
+          statusText: res.statusText,
+          snippet: bodySnippet,
+        },
+        { status: 500 }
+      );
+    }
+
+    const csvText = await res.text();
+
+    const parsed = Papa.parse<RawRow>(csvText, {
+      header: true,
+      skipEmptyLines: true,
+    });
+
+    if (parsed.errors && parsed.errors.length > 0) {
+      return NextResponse.json(
+        {
+          error: "CSV parse error",
+          firstError: parsed.errors[0].message,
+        },
+        { status: 500 }
+      );
+    }
+
+    const rows = toHappyHourRows(parsed.data || []);
+
+    return NextResponse.json({ rows });
+  } catch (err: any) {
+    return NextResponse.json(
+      {
+        error: "Unexpected server error",
+        details: err?.message ?? String(err),
+      },
+      { status: 500 }
+    );
+  }
 }
