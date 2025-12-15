@@ -19,6 +19,8 @@ type Props = {
   setTimeMode: (v: "now" | "custom") => void;
   timeHHMM: string;
   setTimeHHMM: (v: string) => void;
+  showAllForDay: boolean;
+  setShowAllForDay: (v: boolean) => void;
   sort: "open" | "soon" | "az";
   setSort: (v: "open" | "soon" | "az") => void;
   showSavedOnly: boolean;
@@ -36,24 +38,24 @@ const DAYS: (DayOfWeek | "Today")[] = [
   "Sun",
 ];
 
-// build 30-minute increments from 11:00 to 01:30
+// 30-minute increments from 11:00 to 01:30 next day
 const timeOptions: { value: string; label: string }[] = (() => {
   const out: { value: string; label: string }[] = [];
   let minutes = 11 * 60; // 11:00
-  const endMinutes = 1 * 60 + 30 + 24 * 60; // 01:30 next day
+  const endMinutes = 24 * 60 + 1 * 60 + 30; // 01:30 next day
 
   while (minutes <= endMinutes) {
     let mins = minutes;
-    if (mins >= 24 * 60) mins -= 24 * 60; // wrap after midnight
+    if (mins >= 24 * 60) mins -= 24 * 60;
 
     const hh = String(Math.floor(mins / 60)).padStart(2, "0");
     const mm = String(mins % 60).padStart(2, "0");
     const value = `${hh}:${mm}`;
 
     out.push({ value, label: format12h(value) });
-
     minutes += 30;
   }
+
   return out;
 })();
 
@@ -72,6 +74,8 @@ export default function Filters({
   setTimeMode,
   timeHHMM,
   setTimeHHMM,
+  showAllForDay,
+  setShowAllForDay,
   sort,
   setSort,
   showSavedOnly,
@@ -125,9 +129,7 @@ export default function Filters({
         </label>
         <select
           value={type}
-          onChange={(e) =>
-            setType(e.target.value as HHType | "any")
-          }
+          onChange={(e) => setType(e.target.value as HHType | "any")}
           style={selectStyle}
         >
           <option value="any">Any</option>
@@ -201,13 +203,7 @@ export default function Filters({
         >
           Time
         </label>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 4,
-          }}
-        >
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <label style={{ fontSize: 12 }}>
             <input
               type="radio"
@@ -241,6 +237,15 @@ export default function Filters({
               style={{ marginRight: 4 }}
             />
             Right now
+          </label>
+          <label style={{ fontSize: 12, marginTop: 4 }}>
+            <input
+              type="checkbox"
+              checked={showAllForDay}
+              onChange={(e) => setShowAllForDay(e.target.checked)}
+              style={{ marginRight: 4 }}
+            />
+            Show all for day
           </label>
         </div>
       </div>

@@ -27,6 +27,7 @@ export default function Page() {
   const [neighborhood, setNeighborhood] = useState("");
   const [timeMode, setTimeMode] = useState<"now" | "custom">("custom");
   const [timeHHMM, setTimeHHMM] = useState("17:00");
+  const [showAllForDay, setShowAllForDay] = useState(false);
   const [sort, setSort] = useState<"open" | "soon" | "az">("open");
   const [showSavedOnly, setShowSavedOnly] = useState(false);
 
@@ -75,6 +76,8 @@ export default function Page() {
       )
       .filter((r) => (showSavedOnly ? favorites.has(r.id) : true))
       .filter((r) => {
+        if (showAllForDay) return true;
+
         if (timeMode === "now") return isOpenNow(r, now);
 
         const targetMin = minutesFromHHMM(timeHHMM);
@@ -119,6 +122,7 @@ export default function Page() {
     neighborhood,
     timeMode,
     timeHHMM,
+    showAllForDay,
     sort,
     showSavedOnly,
     favorites,
@@ -156,6 +160,8 @@ export default function Page() {
         setTimeMode={setTimeMode}
         timeHHMM={timeHHMM}
         setTimeHHMM={setTimeHHMM}
+        showAllForDay={showAllForDay}
+        setShowAllForDay={setShowAllForDay}
         sort={sort}
         setSort={setSort}
         showSavedOnly={showSavedOnly}
@@ -209,6 +215,7 @@ export default function Page() {
                   <th style={thStyle}>Save</th>
                   <th style={thStyle}>Place</th>
                   <th style={thStyle}>When</th>
+                  <th style={thStyle}>Deal</th>
                   <th style={thStyle}>Type</th>
                   <th style={thStyle}>Cuisine</th>
                   <th style={thStyle}>Neighborhood</th>
@@ -254,33 +261,29 @@ export default function Page() {
                               <span style={pillStyle}>Open now</span>
                             ) : null}
                           </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              flexWrap: "wrap",
-                              gap: 6,
-                            }}
-                          >
-                            {r.deal_label && (
-                              <span style={dealPillStyle(r.deal_label)}>
-                                {r.deal_label}
-                              </span>
-                            )}
-                            {r.notes && (
-                              <span
-                                style={{
-                                  fontSize: 12,
-                                  color: "#666",
-                                }}
-                              >
-                                {r.notes}
-                              </span>
-                            )}
-                          </div>
+                          {r.notes && (
+                            <span
+                              style={{
+                                fontSize: 12,
+                                color: "#666",
+                              }}
+                            >
+                              {r.notes}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td style={tdStyle}>
                         {format12h(r.start_time)}–{format12h(r.end_time)}
+                      </td>
+                      <td style={tdStyle}>
+                        {r.deal_label ? (
+                          <span style={dealPillStyle(r.deal_label)}>
+                            {r.deal_label}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
                       </td>
                       <td style={tdStyle}>{r.type}</td>
                       <td style={tdStyle}>{r.cuisine_tags.join(", ")}</td>
