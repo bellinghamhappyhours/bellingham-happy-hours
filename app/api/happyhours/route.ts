@@ -1,39 +1,35 @@
+// app/api/happyhours/route.ts
+
 import { NextResponse } from "next/server";
 import Papa from "papaparse";
-import type { HappyHourRow } from "../../../lib/types";
+import type { HappyHourRow, DayOfWeek } from "../../../lib/types";
 
-type RawRow = {
-  venue_name?: string;
-  neighborhood?: string;
-  cuisine_tags?: string;
-  menu_url?: string;
-  website_url?: string;
-  day_of_week?: string;
-  start_time?: string;
-  end_time?: string;
-  type?: string;
-  deal_label?: string;
-  notes?: string;
-  last_verified?: string;
-};
+const SHEET_CSV_URL = process.env.SHEET_CSV_URL;
+
+const VALID_DAYS: DayOfWeek[] = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
 
 export async function GET() {
-  const url = process.env.SHEET_CSV_URL;
-
-  if (!url) {
+  if (!SHEET_CSV_URL) {
     return NextResponse.json(
-      { rows: [], error: "Missing SHEET_CSV_URL" },
+      { error: "Missing SHEET_CSV_URL env var" },
       { status: 500 }
     );
   }
 
   try {
-    const res = await fetch(url);
+    const res = await fetch(SHEET_CSV_URL, { cache: "no-store" });
 
     if (!res.ok) {
       return NextResponse.json(
         {
-          rows: [],
           error: "Sheet HTTP error",
           status: res.status,
           statusText: res.statusText,
@@ -42,45 +38,55 @@ export async function GET() {
       );
     }
 
-    const csv = await res.text();
+    const csvText = await res.text();
 
-    const parsed = Papa.parse<RawRow>(csv, {
+    const parsed = Papa.parse(csvText, {
       header: true,
       skipEmptyLines: true,
     });
 
-    if (parsed.errors && parsed.errors.length > 0) {
-      // If parsing fails badly, surface the first error so we know.
-      return NextResponse.json(
-        {
-          rows: [],
-          error: "CSV parse error",
-          firstError: parsed.errors[0],
-        },
-        { status: 500 }
-      );
-    }
-
-    const rows: HappyHourRow[] = (parsed.data || [])
+    const rows: HappyHourRow[] = (parsed.data as any[])
       .map((r, idx) => {
         const venue_name = (r.venue_name || "").trim();
-        const day_of_week = (r.day_of_week || "").trim();
-        const start_time = (r.start_time || "").trim();
-        const end_time = (r.end_time || "").trim();
         const menu_url = (r.menu_url || "").trim();
 
-        // Basic required fields. If they’re missing, skip the row.
-        if (!venue_name || !day_of_week || !start_time || !end_time || !menu_url) {
+        if (!venue_name || !menu_url) {
           return null;
         }
 
-        const cuisine_tags =
-          (r.cuisine_tags || "")
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean) || [];
+        // Normalize cuisines (comma-separated in the sheet)
+        const cuisine_tags: string[] = (r.cuisine_tags || "")
+          .split(",")
+          .map((s: string) => s.trim())
+          .filter(Boolean);
 
-        const id = `${venue_name}-${day_of_week}-${start_time}-${end_time}-${idx}`;
+        // Normalize/validate day_of_week
+        const rawDay = (r.day_of_week || "").trim();
+        const day = rawDay as DayOfWeek;
+
+        if (!VALID_DAYS.includes(day)) {
+          // If the day doesn't match our allowed set, skip the row
+          return null;
+        }
+
+        // Basic time strings, passed through as-is ("HH:MM")
+        const start_time = (r.start_time || "").trim();
+        const end_time = (r.end_time || "").trim();
+
+        if (!start_time || !end_time) {
+          return null;
+        }
+
+        // Build a stable-ish id
+        const id =
+          (r.id as string) ||
+          [
+            venue_name,
+            day,
+            start_time,
+            end_time,
+            (r.deal_label || "").trim(),
+          ].join("|");
 
         const row: HappyHourRow = {
           id,
@@ -89,7 +95,7 @@ export async function GET() {
           cuisine_tags,
           menu_url,
           website_url: (r.website_url || "").trim() || undefined,
-          day_of_week,
+          day_of_week: day,
           start_time,
           end_time,
           type: (r.type || "").trim(),
@@ -103,13 +109,10 @@ export async function GET() {
       .filter((r): r is HappyHourRow => r !== null);
 
     return NextResponse.json({ rows });
-  } catch (err: unknown) {
+  } catch (err: any) {
+    console.error("Error loading sheet:", err);
     return NextResponse.json(
-      {
-        rows: [],
-        error: "Unhandled error in /api/happyhours",
-        message: String(err),
-      },
+      { error: "Failed to fetch sheet CSV" },
       { status: 500 }
     );
   }

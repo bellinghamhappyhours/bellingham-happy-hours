@@ -1,4 +1,75 @@
-:root { color-scheme: light; }
-body { margin: 0; background: #fafafa; color: #111; }
-a { color: inherit; }
-* { box-sizing: border-box; }
+/* ---------- Filter layout ---------- */
+
+.filters {
+    background: #ffffff;
+    border: 1px solid #e6e6e6;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  
+  .filters-row {
+    display: grid;
+    gap: 12px;
+  }
+  
+  .filters-row-top {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-bottom: 16px;
+  }
+  
+  .filters-row-bottom {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: flex-end;
+  }
+  
+  .filter-block {
+    min-width: 0;
+  }
+  
+  .filter-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #444;
+  }
+  
+  .filter-select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+    background: #fff;
+  }
+  
+  .filter-radio-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  
+  .filter-radio-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .filter-checkbox-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+  }
+  
+  /* Mobile: stack filters vertically, no sideways scrolling */
+  @media (max-width: 800px) {
+    .filters-row-top,
+    .filters-row-bottom {
+      grid-template-columns: 1fr;
+    }
+  }
+  
