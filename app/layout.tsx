@@ -1,14 +1,15 @@
-import "./globals.css";
-import type { Metadata } from "next";
 import Script from "next/script";
-import { Inter } from "next/font/google";
-import type React from "react";
-
-const inter = Inter({ subsets: ["latin"] });
+import type { Metadata, Viewport } from "next";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Bellingham Happy Hours",
   description: "Find happy hours in Bellingham by day, time, and cuisine.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -20,8 +21,8 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <head>
-        {gaId && (
+      <body>
+        {gaId ? (
           <>
             <Script
               src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
@@ -36,9 +37,10 @@ export default function RootLayout({
               `}
             </Script>
           </>
-        )}
-      </head>
-      <body className={inter.className}>{children}</body>
+        ) : null}
+
+        {children}
+      </body>
     </html>
   );
 }
