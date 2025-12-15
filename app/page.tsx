@@ -280,14 +280,14 @@ export default function Page() {
       </div>
 
       <footer style={{ padding: "18px 2px", color: "#777", fontSize: 12 }}>
-        <div>*** Currently Under Development *** Disclaimer: Hours change. Please confirm with the venue. ***</div>
-        <div style={{ marginTop: 8 }}>
-          Corrections or menu updates?{" "}
-          <a href="mailto:bellinghamhappyhours@gmail.com" style={{ color: "#111", textDecoration: "underline" }}>
-            bellinghamhappyhours@gmail.com
-          </a>
-        </div>
-      </footer>
+  <div>
+    Corrections or menu updates?{" "}
+    <a href="mailto:bellinghamhappyhours@gmail.com" style={{ color: "#111", textDecoration: "underline" }}>
+      bellinghamhappyhours@gmail.com
+    </a>
+  </div>
+</footer>
+
     </div>
   );
 }
