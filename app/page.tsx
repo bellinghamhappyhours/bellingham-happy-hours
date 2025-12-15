@@ -224,102 +224,86 @@ export default function Page() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((r) => {
-                  const now = new Date();
-                  const open = isOpenNow(r, now);
-                  return (
-                    <tr key={r.id} style={{ borderTop: "1px solid #eee" }}>
-                      <td style={tdStyle}>
-                        <button
-                          onClick={() => favorites.toggle(r.id)}
-                          aria-label="Save"
-                          style={iconButtonStyle}
-                        >
-                          {favorites.has(r.id) ? "♥" : "♡"}
-                        </button>
-                      </td>
-                      <td style={tdStyle}>
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 4,
-                          }}
-                        >
-                          <div
+                {filtered.map((r) => (
+                  <tr key={r.id} style={{ borderTop: "1px solid #eee" }}>
+                    <td style={tdStyle}>
+                      <button
+                        onClick={() => favorites.toggle(r.id)}
+                        aria-label="Save"
+                        style={iconButtonStyle}
+                      >
+                        {favorites.has(r.id) ? "♥" : "♡"}
+                      </button>
+                    </td>
+                    <td style={tdStyle}>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 4,
+                        }}
+                      >
+                        <span style={{ fontWeight: 600 }}>
+                          {r.venue_name}
+                        </span>
+                        {r.notes && (
+                          <span
                             style={{
-                              display: "flex",
-                              alignItems: "center",
-                              flexWrap: "wrap",
-                              gap: 6,
+                              fontSize: 12,
+                              color: "#666",
                             }}
                           >
-                            <span style={{ fontWeight: 600 }}>
-                              {r.venue_name}
-                            </span>
-                            {open ? (
-                              <span style={pillStyle}>Open now</span>
-                            ) : null}
-                          </div>
-                          {r.notes && (
-                            <span
-                              style={{
-                                fontSize: 12,
-                                color: "#666",
-                              }}
-                            >
-                              {r.notes}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td style={tdStyle}>
-                        {format12h(r.start_time)}–{format12h(r.end_time)}
-                      </td>
-                      <td style={tdStyle}>
-                        {r.deal_label ? (
-                          <span style={dealPillStyle(r.deal_label)}>
-                            {r.deal_label}
+                            {r.notes}
                           </span>
-                        ) : (
-                          "—"
                         )}
-                      </td>
-                      <td style={tdStyle}>{r.type}</td>
-                      <td style={tdStyle}>{r.cuisine_tags.join(", ")}</td>
-                      <td style={tdStyle}>{r.neighborhood || "—"}</td>
-                      <td style={tdStyle}>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: 10,
-                            flexWrap: "wrap",
-                          }}
+                      </div>
+                    </td>
+                    <td style={tdStyle}>
+                      {format12h(r.start_time)}–{format12h(r.end_time)}
+                    </td>
+                    <td style={tdStyle}>
+                      {r.deal_label ? (
+                        <span style={dealPillStyle(r.deal_label)}>
+                          {r.deal_label}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td style={tdStyle}>{r.type}</td>
+                    <td style={tdStyle}>{r.cuisine_tags.join(", ")}</td>
+                    <td style={tdStyle}>{r.neighborhood || "—"}</td>
+                    <td style={tdStyle}>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 10,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <a
+                          href={r.menu_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={linkStyle}
                         >
+                          Menu
+                        </a>
+                        {r.website_url ? (
                           <a
-                            href={r.menu_url}
+                            href={r.website_url}
                             target="_blank"
                             rel="noreferrer"
                             style={linkStyle}
                           >
-                            Menu
+                            Website
                           </a>
-                          {r.website_url ? (
-                            <a
-                              href={r.website_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              style={linkStyle}
-                            >
-                              Website
-                            </a>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td style={tdStyle}>{r.last_verified || "—"}</td>
-                    </tr>
-                  );
-                })}
+                        ) : null}
+                      </div>
+                    </td>
+                    <td style={tdStyle}>{r.last_verified || "—"}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -388,17 +372,6 @@ const ghostButtonStyle: React.CSSProperties = {
   cursor: "pointer",
   fontSize: 13,
   color: "#333",
-};
-
-const pillStyle: React.CSSProperties = {
-  marginLeft: 8,
-  padding: "2px 8px",
-  borderRadius: 999,
-  border: "1px solid #d7f0d7",
-  background: "#effaf0",
-  fontSize: 12,
-  color: "#1d6b2a",
-  fontWeight: 600,
 };
 
 function dealPillStyle(label: string): React.CSSProperties {

@@ -86,11 +86,11 @@ export default function Filters({
       style={{
         display: "grid",
         gap: 12,
-        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+        gridTemplateColumns: "repeat(4, minmax(160px, 1fr))",
         alignItems: "flex-end",
       }}
     >
-      {/* Day */}
+      {/* Row 1: Day, Type, Cuisine, Neighborhood */}
       <div>
         <label
           style={{
@@ -115,7 +115,6 @@ export default function Filters({
         </select>
       </div>
 
-      {/* Type */}
       <div>
         <label
           style={{
@@ -139,7 +138,6 @@ export default function Filters({
         </select>
       </div>
 
-      {/* Cuisine */}
       <div>
         <label
           style={{
@@ -165,7 +163,6 @@ export default function Filters({
         </select>
       </div>
 
-      {/* Neighborhood */}
       <div>
         <label
           style={{
@@ -191,7 +188,7 @@ export default function Filters({
         </select>
       </div>
 
-      {/* Time */}
+      {/* Row 2: Time (under Day), Sort (under Type), Saved / Show all under Cuisine/Neighborhood area */}
       <div>
         <label
           style={{
@@ -250,7 +247,6 @@ export default function Filters({
         </div>
       </div>
 
-      {/* Sort + Saved */}
       <div>
         <label
           style={{
@@ -269,11 +265,24 @@ export default function Filters({
           }
           style={selectStyle}
         >
-          <option value="open">Open now first</option>
+          <option value="open">Happening now first</option>
           <option value="soon">Starting soon first</option>
           <option value="az">A–Z by place</option>
         </select>
-        <label style={{ display: "block", marginTop: 6, fontSize: 12 }}>
+      </div>
+
+      <div>
+        <label
+          style={{
+            display: "block",
+            fontSize: 12,
+            fontWeight: 600,
+            marginBottom: 4,
+          }}
+        >
+          Saved
+        </label>
+        <label style={{ fontSize: 12 }}>
           <input
             type="checkbox"
             checked={showSavedOnly}
@@ -283,6 +292,9 @@ export default function Filters({
           Saved only
         </label>
       </div>
+
+      {/* Empty spacer to keep grid clean on wide screens */}
+      <div />
     </section>
   );
 }
