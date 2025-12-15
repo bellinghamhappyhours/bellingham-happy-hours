@@ -1,49 +1,54 @@
-import { DayOfWeek, HappyHourRow } from "./types";
+// lib/time.ts
 
-export const DAYS: DayOfWeek[] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+import type { HappyHourRow } from "./types";
 
-export function dayLabelFromDate(d: Date): DayOfWeek {
-  const map: DayOfWeek[] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  return map[d.getDay()];
-}
-
+/**
+ * Convert "HH:MM" (24-hour) into minutes after midnight.
+ * Example: "15:30" -> 930
+ */
 export function minutesFromHHMM(hhmm: string): number {
-  const [h, m] = hhmm.split(":").map((x) => parseInt(x, 10));
-  if (Number.isNaN(h) || Number.isNaN(m)) return 0;
+  const [hStr, mStr] = hhmm.split(":");
+  const h = Number(hStr) || 0;
+  const m = Number(mStr) || 0;
   return h * 60 + m;
 }
 
+/**
+ * Format "HH:MM" (24-hour) into "h:MM AM/PM".
+ * Example: "15:30" -> "3:30 PM"
+ */
 export function format12h(hhmm: string): string {
   const [hStr, mStr] = hhmm.split(":");
-  const h = parseInt(hStr, 10);
-  const m = parseInt(mStr, 10);
-  const ampm = h >= 12 ? "PM" : "AM";
-  const h12 = ((h + 11) % 12) + 1;
-  const mm = m.toString().padStart(2, "0");
-  return `${h12}:${mm} ${ampm}`;
+  let h = Number(hStr) || 0;
+  const m = Number(mStr) || 0;
+
+  const suffix = h >= 12 ? "PM" : "AM";
+  h = h % 12;
+  if (h === 0) h = 12;
+
+  const mm = String(m).padStart(2, "0");
+  return `${h}:${mm} ${suffix}`;
 }
 
+/**
+ * Check if a given row is "active" right now, based on its start/end time.
+ * We ONLY care about the deal window, not full business hours.
+ * Handles windows that cross midnight, like 9:00 PM – 1:30 AM.
+ */
 export function isOpenNow(row: HappyHourRow, now: Date): boolean {
-  const today = dayLabelFromDate(now);
-  if (row.day_of_week !== today) return false;
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  const start = minutesFromHHMM(row.start_time);
+  let start = minutesFromHHMM(row.start_time);
   let end = minutesFromHHMM(row.end_time);
 
-  const crossesMidnight = end < start;
-  if (crossesMidnight) end += 24 * 60;
+  if (Number.isNaN(start) || Number.isNaN(end)) return false;
 
-  const nowAdjusted = crossesMidnight && nowMin < start ? nowMin + 24 * 60 : nowMin;
-  return nowAdjusted >= start && nowAdjusted <= end;
-}
+  // If the end is "earlier" than start, it crosses midnight.
+  if (end < start) {
+    const nowAdj = nowMinutes < start ? nowMinutes + 24 * 60 : nowMinutes;
+    end += 24 * 60;
+    return nowAdj >= start && nowAdj <= end;
+  }
 
-export function minutesUntilStart(row: HappyHourRow, now: Date): number | null {
-  const today = dayLabelFromDate(now);
-  if (row.day_of_week !== today) return null;
-
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  const start = minutesFromHHMM(row.start_time);
-  const delta = start - nowMin;
-  return delta >= 0 ? delta : null;
+  return nowMinutes >= start && nowMinutes <= end;
 }

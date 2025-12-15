@@ -1,18 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import type React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Filters from "../components/Filters";
 import { useFavorites } from "../components/useFavorites";
-import { HappyHourRow, DayOfWeek, HHType } from "../lib/types";
-import {
-  dayLabelFromDate,
-  format12h,
-  isOpenNow,
-  minutesFromHHMM,
-} from "../lib/time";
+import type { HappyHourRow } from "../lib/types";
+import { format12h, isOpenNow, minutesFromHHMM } from "../lib/time";
 
 type ApiResponse = { rows: HappyHourRow[] };
+
+// For mapping "Today" to a sheet day name
+const DAY_NAMES = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
 
 export default function Page() {
   const [rows, setRows] = useState<HappyHourRow[]>([]);
@@ -20,13 +25,13 @@ export default function Page() {
 
   const favorites = useFavorites();
 
-  const [day, setDay] = useState<DayOfWeek | "Today">("Today");
-  const [type, setType] = useState<HHType | "any">("any");
+  const [day, setDay] = useState<string | "Today">("Today");
+  const [type, setType] = useState<string | "any">("any");
   const [cuisine, setCuisine] = useState("");
   const [neighborhood, setNeighborhood] = useState("");
   const [timeMode, setTimeMode] = useState<"now" | "custom">("custom");
-  const [timeHHMM, setTimeHHMM] = useState("17:00");
-  const [showAllForDay, setShowAllForDay] = useState(false);
+  const [timeHHMM, setTimeHHMM] = useState("17:00"); // 5:00 PM
+  const [showAllForDay, setShowAllForDay] = useState(true);
   const [showSavedOnly, setShowSavedOnly] = useState(false);
 
   useEffect(() => {
@@ -43,7 +48,7 @@ export default function Page() {
 
   const allCuisines = useMemo(() => {
     const s = new Set<string>();
-    rows.forEach((r) => r.cuisine_tags.forEach((t) => s.add(t)));
+    rows.forEach((r) => r.cuisine_tags.forEach((t) => t && s.add(t)));
     return Array.from(s).sort((a, b) => a.localeCompare(b));
   }, [rows]);
 
@@ -58,46 +63,71 @@ export default function Page() {
 
   const filtered = useMemo(() => {
     const now = new Date();
-    const effectiveDay: DayOfWeek =
-      day === "Today" ? dayLabelFromDate(now) : day;
+    const todayName = DAY_NAMES[now.getDay()];
+    const effectiveDay = day === "Today" ? todayName : day;
 
-    const base = rows
+    return rows
+      // Day match
       .filter((r) => r.day_of_week === effectiveDay)
-      .filter((r) =>
-        type === "any"
-          ? true
-          : r.type === type || r.type === "both" || type === "both"
-      )
+      // Type filter: "any" | Food | Drink | Food and Drink
+      .filter((r) => {
+        if (type === "any") return true;
+        const rowType = (r.type || "").toLowerCase();
+
+        if (type === "Food") {
+          return rowType.includes("food") && !rowType.includes("drink");
+        }
+        if (type === "Drink") {
+          return rowType.includes("drink") && !rowType.includes("food");
+        }
+        if (type === "Food and Drink") {
+          return rowType.includes("food") && rowType.includes("drink");
+        }
+        return true;
+      })
+      // Cuisine filter
       .filter((r) => (cuisine ? r.cuisine_tags.includes(cuisine) : true))
+      // Neighborhood filter
       .filter((r) =>
         neighborhood ? (r.neighborhood || "").trim() === neighborhood : true
       )
+      // Saved only
       .filter((r) => (showSavedOnly ? favorites.has(r.id) : true))
+      // Time filtering
       .filter((r) => {
         if (showAllForDay) return true;
 
         if (timeMode === "now") {
+          // "right now" means: deal window covers current time
           return isOpenNow(r, now);
         }
 
         const targetMin = minutesFromHHMM(timeHHMM);
         const start = minutesFromHHMM(r.start_time);
         let end = minutesFromHHMM(r.end_time);
-        const crosses = end < start;
+        if (
+          Number.isNaN(start) ||
+          Number.isNaN(end) ||
+          Number.isNaN(targetMin)
+        ) {
+          return false;
+        }
+
+        const crosses = end < start; // crosses midnight
         if (crosses) end += 24 * 60;
 
         const tAdj =
           crosses && targetMin < start ? targetMin + 24 * 60 : targetMin;
-        return tAdj >= start && tAdj <= end;
-      });
 
-    // Default sort: earliest start time first, then A–Z by place
-    return base.sort((a, b) => {
-      const aStart = minutesFromHHMM(a.start_time);
-      const bStart = minutesFromHHMM(b.start_time);
-      if (aStart !== bStart) return aStart - bStart;
-      return a.venue_name.localeCompare(b.venue_name);
-    });
+        return tAdj >= start && tAdj <= end;
+      })
+      // Sort by start time, then venue name
+      .sort((a, b) => {
+        const aStart = minutesFromHHMM(a.start_time);
+        const bStart = minutesFromHHMM(b.start_time);
+        if (aStart !== bStart) return aStart - bStart;
+        return a.venue_name.localeCompare(b.venue_name);
+      });
   }, [
     rows,
     day,
@@ -205,97 +235,66 @@ export default function Page() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((r) => {
-                  const typeLabel =
-                    r.type === "both"
-                      ? "Food & Drink"
-                      : r.type === "food"
-                      ? "Food"
-                      : r.type === "drink"
-                      ? "Drink"
-                      : r.type;
-
-                  return (
-                    <tr key={r.id} style={{ borderTop: "1px solid #eee" }}>
-                      <td style={tdStyle}>
-                        <button
-                          onClick={() => favorites.toggle(r.id)}
-                          aria-label="Save"
-                          style={iconButtonStyle}
+                {filtered.map((r) => (
+                  <tr key={r.id} style={{ borderTop: "1px solid #eee" }}>
+                    <td style={tdStyle}>
+                      <button
+                        onClick={() => favorites.toggle(r.id)}
+                        aria-label="Save"
+                        style={iconButtonStyle}
+                      >
+                        {favorites.has(r.id) ? "♥" : "♡"}
+                      </button>
+                    </td>
+                    <td style={tdStyle}>
+                      <div style={{ fontWeight: 600 }}>{r.venue_name}</div>
+                    </td>
+                    <td style={tdStyle}>
+                      {format12h(r.start_time)}–{format12h(r.end_time)}
+                    </td>
+                    <td style={tdStyle}>
+                      {r.deal_label ? (
+                        <span style={dealPillStyle(r.deal_label)}>
+                          {r.deal_label}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td style={tdStyle}>{displayType(r.type)}</td>
+                    <td style={tdStyle}>{r.cuisine_tags.join(", ")}</td>
+                    <td style={tdStyle}>{r.neighborhood || "—"}</td>
+                    <td style={tdStyle}>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 10,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <a
+                          href={r.menu_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={linkStyle}
                         >
-                          {favorites.has(r.id) ? "♥" : "♡"}
-                        </button>
-                      </td>
-                      <td style={tdStyle}>
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 4,
-                          }}
-                        >
-                          <span style={{ fontWeight: 600 }}>
-                            {r.venue_name}
-                          </span>
-                          {r.notes && (
-                            <span
-                              style={{
-                                fontSize: 12,
-                                color: "#666",
-                              }}
-                            >
-                              {r.notes}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td style={tdStyle}>
-                        {format12h(r.start_time)}–{format12h(r.end_time)}
-                      </td>
-                      <td style={tdStyle}>
-                        {r.deal_label ? (
-                          <span style={dealPillStyle(r.deal_label)}>
-                            {r.deal_label}
-                          </span>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td style={tdStyle}>{typeLabel}</td>
-                      <td style={tdStyle}>{r.cuisine_tags.join(", ")}</td>
-                      <td style={tdStyle}>{r.neighborhood || "—"}</td>
-                      <td style={tdStyle}>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: 10,
-                            flexWrap: "wrap",
-                          }}
-                        >
+                          Menu
+                        </a>
+                        {r.website_url ? (
                           <a
-                            href={r.menu_url}
+                            href={r.website_url}
                             target="_blank"
                             rel="noreferrer"
                             style={linkStyle}
                           >
-                            Menu
+                            Website
                           </a>
-                          {r.website_url ? (
-                            <a
-                              href={r.website_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              style={linkStyle}
-                            >
-                              Website
-                            </a>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td style={tdStyle}>{r.last_verified || "—"}</td>
-                    </tr>
-                  );
-                })}
+                        ) : null}
+                      </div>
+                    </td>
+                    <td style={tdStyle}>{r.last_verified || "—"}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -319,6 +318,13 @@ export default function Page() {
       </footer>
     </div>
   );
+}
+
+function displayType(t: string | undefined): string {
+  if (!t) return "—";
+  const lower = t.toLowerCase().trim();
+  if (lower === "food and drink") return "Food & Drink";
+  return t;
 }
 
 const cardStyle: React.CSSProperties = {

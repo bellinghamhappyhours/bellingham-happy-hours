@@ -1,16 +1,18 @@
 "use client";
 
 import type React from "react";
-import { DayOfWeek, HHType } from "../lib/types";
 import { format12h } from "../lib/time";
 
+// We keep types loose here so they line up with your sheet:
+// - day: "Today" or any full day string like "Monday"
+// - type: "any", "Food", "Drink", "Food and Drink"
 type Props = {
   allCuisines: string[];
   allNeighborhoods: string[];
-  day: DayOfWeek | "Today";
-  setDay: (v: DayOfWeek | "Today") => void;
-  type: HHType | "any";
-  setType: (v: HHType | "any") => void;
+  day: string | "Today";
+  setDay: (v: string | "Today") => void;
+  type: string | "any";
+  setType: (v: string | "any") => void;
   cuisine: string;
   setCuisine: (v: string) => void;
   neighborhood: string;
@@ -25,18 +27,19 @@ type Props = {
   setShowSavedOnly: (v: boolean) => void;
 };
 
-const DAYS: (DayOfWeek | "Today")[] = [
+// Full day names to match your sheet
+const DAYS: (string | "Today")[] = [
   "Today",
-  "Mon",
-  "Tue",
-  "Wed",
-  "Thu",
-  "Fri",
-  "Sat",
-  "Sun",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
 ];
 
-// 30-minute increments from 11:00 to 1:30 AM next day
+// 30-minute increments from 11:00 to 01:30 (next day)
 const timeOptions: { value: string; label: string }[] = (() => {
   const out: { value: string; label: string }[] = [];
   let minutes = 11 * 60; // 11:00
@@ -100,12 +103,12 @@ export default function Filters({
         </label>
         <select
           value={day}
-          onChange={(e) => setDay(e.target.value as DayOfWeek | "Today")}
+          onChange={(e) => setDay(e.target.value as string | "Today")}
           style={selectStyle}
         >
           {DAYS.map((d) => (
             <option key={d} value={d}>
-              {d === "Today" ? "Today" : d}
+              {d}
             </option>
           ))}
         </select>
@@ -124,13 +127,13 @@ export default function Filters({
         </label>
         <select
           value={type}
-          onChange={(e) => setType(e.target.value as HHType | "any")}
+          onChange={(e) => setType(e.target.value as string | "any")}
           style={selectStyle}
         >
           <option value="any">Any</option>
-          <option value="food">Food</option>
-          <option value="drink">Drink</option>
-          <option value="both">Food &amp; Drink</option>
+          <option value="Food">Food</option>
+          <option value="Drink">Drink</option>
+          <option value="Food and Drink">Food &amp; Drink</option>
         </select>
       </div>
 
@@ -184,7 +187,7 @@ export default function Filters({
         </select>
       </div>
 
-      {/* Row 2: Time, Show all for day, Saved, spacer */}
+      {/* Row 2: Time | Show all for day | Saved only | spacer */}
       <div>
         <label
           style={{
@@ -196,7 +199,14 @@ export default function Filters({
         >
           Time
         </label>
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {/* Radios on one row */}
+        <div
+          style={{
+            display: "flex",
+            gap: 16,
+            marginBottom: 4,
+          }}
+        >
           <label style={{ fontSize: 12 }}>
             <input
               type="radio"
@@ -208,18 +218,6 @@ export default function Filters({
             />
             At a time
           </label>
-          <select
-            value={timeHHMM}
-            onChange={(e) => setTimeHHMM(e.target.value)}
-            style={selectStyle}
-            disabled={timeMode !== "custom"}
-          >
-            {timeOptions.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
           <label style={{ fontSize: 12 }}>
             <input
               type="radio"
@@ -232,6 +230,19 @@ export default function Filters({
             Right now
           </label>
         </div>
+        {/* Dropdown below (disabled when "Right now" is selected) */}
+        <select
+          value={timeHHMM}
+          onChange={(e) => setTimeHHMM(e.target.value)}
+          style={selectStyle}
+          disabled={timeMode !== "custom"}
+        >
+          {timeOptions.map((t) => (
+            <option key={t.value} value={t.value}>
+              {t.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div>
@@ -243,7 +254,7 @@ export default function Filters({
             marginBottom: 4,
           }}
         >
-          Show
+          Show all for day
         </label>
         <label style={{ fontSize: 12 }}>
           <input
@@ -252,7 +263,7 @@ export default function Filters({
             onChange={(e) => setShowAllForDay(e.target.checked)}
             style={{ marginRight: 4 }}
           />
-          Show all for day
+          Show all
         </label>
       </div>
 
@@ -265,7 +276,7 @@ export default function Filters({
             marginBottom: 4,
           }}
         >
-          Saved
+          Saved only
         </label>
         <label style={{ fontSize: 12 }}>
           <input
@@ -274,11 +285,11 @@ export default function Filters({
             onChange={(e) => setShowSavedOnly(e.target.checked)}
             style={{ marginRight: 4 }}
           />
-          Saved only
+          Saved
         </label>
       </div>
 
-      {/* Spacer to balance grid */}
+      {/* Spacer to balance the 4-column grid */}
       <div />
     </section>
   );
