@@ -1,9 +1,9 @@
 "use client";
 
-import React from "react";
+import type React from "react";
 import type { DayOfWeek, HHType } from "../lib/types";
 
-type FiltersProps = {
+type Props = {
   allCuisines: string[];
   allNeighborhoods: string[];
 
@@ -25,9 +25,6 @@ type FiltersProps = {
   timeHHMM: string;
   setTimeHHMM: (v: string) => void;
 
-  sort: "open" | "soon" | "az";
-  setSort: (v: "open" | "soon" | "az") => void;
-
   showAllForDay: boolean;
   setShowAllForDay: (v: boolean) => void;
 
@@ -35,7 +32,7 @@ type FiltersProps = {
   setShowSavedOnly: (v: boolean) => void;
 };
 
-// For the Day dropdown in the UI
+// Must match your sheet values exactly for filtering to work.
 const DAYS: (DayOfWeek | "Today")[] = [
   "Today",
   "Monday",
@@ -47,64 +44,31 @@ const DAYS: (DayOfWeek | "Today")[] = [
   "Sunday",
 ];
 
-const DAY_NAMES = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
-
-function labelForDay(option: DayOfWeek | "Today") {
-  if (option !== "Today") return option;
-  const now = new Date();
-  const name = DAY_NAMES[now.getDay()];
-  const short = name.slice(0, 3);
-  return `Today (${short})`;
-}
-
-function formatMinutes(min: number): string {
-  const h24 = Math.floor(min / 60);
-  const m = min % 60;
-  const ampm = h24 >= 12 ? "PM" : "AM";
-  let h12 = h24 % 12;
-  if (h12 === 0) h12 = 12;
-  const mm = m.toString().padStart(2, "0");
-  return `${h12}:${mm} ${ampm}`;
-}
-
-// 30-minute increments from 11:00 AM to 1:30 AM
-const timeOptions: { value: string; label: string }[] = (() => {
+// 30-minute increments from 11:00 AM to 1:30 AM (next day)
+function buildTimeOptions(): { value: string; label: string }[] {
   const out: { value: string; label: string }[] = [];
+  const start = 11 * 60; // 11:00
+  const end = 25 * 60 + 30; // 1:30 next day
 
-  const push = (h24: number, m: number) => {
-    const value =
-      h24.toString().padStart(2, "0") + ":" + m.toString().padStart(2, "0");
-    out.push({ value, label: formatMinutes(h24 * 60 + m) });
-  };
+  for (let m = start; m <= end; m += 30) {
+    const minutesInDay = m % (24 * 60);
+    const hh = Math.floor(minutesInDay / 60);
+    const mm = minutesInDay % 60;
 
-  // 11:00–23:30
-  for (let h = 11; h <= 23; h++) {
-    for (let m = 0; m < 60; m += 30) {
-      push(h, m);
-    }
+    const isPM = hh >= 12;
+    const h12 = ((hh + 11) % 12) + 1;
+    const label = `${h12}:${mm.toString().padStart(2, "0")} ${isPM ? "PM" : "AM"}`;
+
+    const value = `${hh.toString().padStart(2, "0")}:${mm.toString().padStart(2, "0")}`;
+    out.push({ value, label });
   }
 
-  // 00:00, 00:30, 01:00, 01:30
-  const late: [number, number][] = [
-    [0, 0],
-    [0, 30],
-    [1, 0],
-    [1, 30],
-  ];
-  late.forEach(([h, m]) => push(h, m));
-
   return out;
-})();
+}
 
-export default function Filters(props: FiltersProps) {
+const TIME_OPTIONS = buildTimeOptions();
+
+export default function Filters(props: Props) {
   const {
     allCuisines,
     allNeighborhoods,
@@ -120,63 +84,53 @@ export default function Filters(props: FiltersProps) {
     setTimeMode,
     timeHHMM,
     setTimeHHMM,
-    sort,
-    setSort,
     showAllForDay,
     setShowAllForDay,
     showSavedOnly,
     setShowSavedOnly,
   } = props;
 
-  const isNow = timeMode === "now";
-
   return (
-    <section className="filters">
-      {/* Top row: day / type / cuisine / neighborhood */}
-      <div className="filters-row filters-row-top">
-        <div className="filter-block">
-          <label className="filter-label">Day</label>
+    <div className="filtersCard">
+      {/* Row 1: Day / Type / Cuisine / Neighborhood */}
+      <div className="row row1">
+        <div className="group">
+          <div className="label">Day</div>
           <select
-            className="filter-select"
+            className="select"
             value={day}
             onChange={(e) => setDay(e.target.value as DayOfWeek | "Today")}
           >
             {DAYS.map((d) => (
               <option key={d} value={d}>
-                {labelForDay(d)}
+                {d === "Today" ? "Today" : d}
               </option>
             ))}
           </select>
         </div>
 
-        <div className="filter-block">
-          <label className="filter-label">Type</label>
+        <div className="group">
+          <div className="label">Type</div>
           <select
-            className="filter-select"
+            className="select"
             value={type}
-            onChange={(e) =>
-              setType(
-                e.target.value === "any"
-                  ? "any"
-                  : (e.target.value as HHType)
-              )
-            }
+            onChange={(e) => setType(e.target.value as HHType | "any")}
           >
             <option value="any">Any</option>
             <option value="Food">Food</option>
             <option value="Drink">Drink</option>
-            <option value="Food and Drink">Food &amp; Drink</option>
+            <option value="Food and Drink">Food and Drink</option>
           </select>
         </div>
 
-        <div className="filter-block">
-          <label className="filter-label">Cuisine</label>
+        <div className="group">
+          <div className="label">Cuisine</div>
           <select
-            className="filter-select"
+            className="select"
             value={cuisine || ""}
             onChange={(e) => setCuisine(e.target.value)}
           >
-            <option value="">Any</option>
+            <option value="">All</option>
             {allCuisines.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -185,14 +139,14 @@ export default function Filters(props: FiltersProps) {
           </select>
         </div>
 
-        <div className="filter-block">
-          <label className="filter-label">Neighborhood</label>
+        <div className="group">
+          <div className="label">Neighborhood</div>
           <select
-            className="filter-select"
+            className="select"
             value={neighborhood || ""}
             onChange={(e) => setNeighborhood(e.target.value)}
           >
-            <option value="">Any</option>
+            <option value="">All</option>
             {allNeighborhoods.map((n) => (
               <option key={n} value={n}>
                 {n}
@@ -202,51 +156,50 @@ export default function Filters(props: FiltersProps) {
         </div>
       </div>
 
-      {/* Bottom row: time / show-all / sort / saved */}
-      <div className="filters-row filters-row-bottom">
-        {/* Time */}
-        <div className="filter-block">
-          <label className="filter-label">Time</label>
-          <div className="filter-radio-row">
-            <label className="filter-radio-option">
+      {/* Row 2: Time / Show All / Saved Only */}
+      <div className="row row2">
+        <div className="group">
+          <div className="label">Time filter</div>
+
+          <div className="timeToggleRow">
+            <label className="radioRow">
               <input
                 type="radio"
                 name="timeMode"
-                value="custom"
                 checked={timeMode === "custom"}
                 onChange={() => setTimeMode("custom")}
               />
               <span>At a time</span>
             </label>
-            <label className="filter-radio-option">
+
+            <label className="radioRow">
               <input
                 type="radio"
                 name="timeMode"
-                value="now"
                 checked={timeMode === "now"}
                 onChange={() => setTimeMode("now")}
               />
               <span>Right now</span>
             </label>
           </div>
+
           <select
-            className="filter-select"
+            className="select"
             value={timeHHMM}
-            disabled={isNow}
             onChange={(e) => setTimeHHMM(e.target.value)}
+            disabled={timeMode === "now"}
           >
-            {timeOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
+            {TIME_OPTIONS.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
               </option>
             ))}
           </select>
         </div>
 
-        {/* Show all for day */}
-        <div className="filter-block">
-          <label className="filter-label">Show all for day</label>
-          <label className="filter-checkbox-row">
+        <div className="group">
+          <div className="label">Show all for day</div>
+          <label className="checkRow">
             <input
               type="checkbox"
               checked={showAllForDay}
@@ -256,26 +209,9 @@ export default function Filters(props: FiltersProps) {
           </label>
         </div>
 
-        {/* Sort */}
-        <div className="filter-block">
-          <label className="filter-label">Sort</label>
-          <select
-            className="filter-select"
-            value={sort}
-            onChange={(e) =>
-              setSort(e.target.value as "open" | "soon" | "az")
-            }
-          >
-            <option value="open">Open now first</option>
-            <option value="soon">Starting soon first</option>
-            <option value="az">A–Z</option>
-          </select>
-        </div>
-
-        {/* Saved only */}
-        <div className="filter-block">
-          <label className="filter-label">Saved only</label>
-          <label className="filter-checkbox-row">
+        <div className="group">
+          <div className="label">Saved only</div>
+          <label className="checkRow">
             <input
               type="checkbox"
               checked={showSavedOnly}
@@ -285,6 +221,92 @@ export default function Filters(props: FiltersProps) {
           </label>
         </div>
       </div>
-    </section>
+
+      <style jsx>{`
+        .filtersCard {
+          background: white;
+          border: 1px solid #e6e6e6;
+          border-radius: 12px;
+          padding: 16px;
+        }
+
+        .row {
+          display: grid;
+          gap: 14px;
+        }
+
+        /* Desktop/tablet layout */
+        .row1 {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .row2 {
+          margin-top: 14px;
+          grid-template-columns: minmax(260px, 1.3fr) minmax(180px, 1fr) minmax(180px, 1fr);
+          align-items: start;
+        }
+
+        .group {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          min-width: 0;
+        }
+
+        .label {
+          font-size: 14px;
+          font-weight: 600;
+          color: #111;
+        }
+
+        .select {
+          width: 100%;
+          padding: 10px 12px;
+          border-radius: 10px;
+          border: 1px solid #d6d6d6;
+          background: white;
+          font-size: 14px;
+          min-width: 0;
+        }
+
+        .timeToggleRow {
+          display: flex;
+          gap: 18px;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+
+        .radioRow {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px;
+          color: #111;
+        }
+
+        .checkRow {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px;
+          color: #111;
+        }
+
+        /* Mobile: stack everything vertically so nothing is off-screen */
+        @media (max-width: 720px) {
+          .row1 {
+            grid-template-columns: 1fr;
+          }
+
+          .row2 {
+            grid-template-columns: 1fr;
+          }
+
+          .timeToggleRow {
+            gap: 14px;
+          }
+        }
+      `}</style>
+    </div>
   );
 }
