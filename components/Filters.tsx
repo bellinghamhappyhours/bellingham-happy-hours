@@ -1,7 +1,8 @@
 "use client";
 
+import type React from "react";
 import { DayOfWeek, HHType } from "../lib/types";
-import { DAYS, dayLabelFromDate } from "../lib/time";
+import { format12h } from "../lib/time";
 
 type Props = {
   allCuisines: string[];
@@ -14,192 +15,278 @@ type Props = {
   setCuisine: (v: string) => void;
   neighborhood: string;
   setNeighborhood: (v: string) => void;
-
   timeMode: "now" | "custom";
   setTimeMode: (v: "now" | "custom") => void;
   timeHHMM: string;
   setTimeHHMM: (v: string) => void;
-
-  showAllDay: boolean;
-  setShowAllDay: (v: boolean) => void;
-
   sort: "open" | "soon" | "az";
   setSort: (v: "open" | "soon" | "az") => void;
-
   showSavedOnly: boolean;
   setShowSavedOnly: (v: boolean) => void;
 };
 
-function pad2(n: number) {
-  return n.toString().padStart(2, "0");
-}
+const DAYS: (DayOfWeek | "Today")[] = [
+  "Today",
+  "Mon",
+  "Tue",
+  "Wed",
+  "Thu",
+  "Fri",
+  "Sat",
+  "Sun",
+];
 
-function format12h(hhmm: string) {
-  const [hStr, mStr] = hhmm.split(":");
-  const h = parseInt(hStr, 10);
-  const m = parseInt(mStr, 10);
-  const ampm = h >= 12 ? "PM" : "AM";
-  const h12 = ((h + 11) % 12) + 1;
-  return `${h12}:${pad2(m)} ${ampm}`;
-}
+// build 30-minute increments from 11:00 to 01:30
+const timeOptions: { value: string; label: string }[] = (() => {
+  const out: { value: string; label: string }[] = [];
+  let minutes = 11 * 60; // 11:00
+  const endMinutes = 1 * 60 + 30 + 24 * 60; // 01:30 next day
 
-// 11:00 AM -> 1:30 AM, 30-minute steps
-function buildTimeOptions() {
-  const opts: { value: string; label: string }[] = [];
+  while (minutes <= endMinutes) {
+    let mins = minutes;
+    if (mins >= 24 * 60) mins -= 24 * 60; // wrap after midnight
 
-  // 11:00 -> 23:30
-  for (let h = 11; h <= 23; h++) {
-    for (let m = 0; m < 60; m += 30) {
-      const value = `${pad2(h)}:${pad2(m)}`;
-      opts.push({ value, label: format12h(value) });
-    }
+    const hh = String(Math.floor(mins / 60)).padStart(2, "0");
+    const mm = String(mins % 60).padStart(2, "0");
+    const value = `${hh}:${mm}`;
+
+    out.push({ value, label: format12h(value) });
+
+    minutes += 30;
   }
+  return out;
+})();
 
-  // 00:00 -> 01:30
-  for (let h = 0; h <= 1; h++) {
-    for (let m = 0; m < 60; m += 30) {
-      const value = `${pad2(h)}:${pad2(m)}`;
-      opts.push({ value, label: format12h(value) });
-    }
-  }
-
-  return opts;
-}
-
-const TIME_OPTIONS = buildTimeOptions();
-
-export default function Filters(props: Props) {
-  const today = dayLabelFromDate(new Date());
-
+export default function Filters({
+  allCuisines,
+  allNeighborhoods,
+  day,
+  setDay,
+  type,
+  setType,
+  cuisine,
+  setCuisine,
+  neighborhood,
+  setNeighborhood,
+  timeMode,
+  setTimeMode,
+  timeHHMM,
+  setTimeHHMM,
+  sort,
+  setSort,
+  showSavedOnly,
+  setShowSavedOnly,
+}: Props) {
   return (
-    <div style={cardStyle}>
-      <div style={gridStyle}>
-        <label style={labelStyle}>
+    <section
+      style={{
+        display: "grid",
+        gap: 12,
+        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+        alignItems: "flex-end",
+      }}
+    >
+      {/* Day */}
+      <div>
+        <label
+          style={{
+            display: "block",
+            fontSize: 12,
+            fontWeight: 600,
+            marginBottom: 4,
+          }}
+        >
           Day
-          <select value={props.day} onChange={(e) => props.setDay(e.target.value as any)} style={inputStyle}>
-            <option value="Today">Today ({today})</option>
-            {DAYS.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
         </label>
+        <select
+          value={day}
+          onChange={(e) => setDay(e.target.value as DayOfWeek | "Today")}
+          style={selectStyle}
+        >
+          {DAYS.map((d) => (
+            <option key={d} value={d}>
+              {d === "Today" ? "Today" : d}
+            </option>
+          ))}
+        </select>
+      </div>
 
-        <label style={labelStyle}>
+      {/* Type */}
+      <div>
+        <label
+          style={{
+            display: "block",
+            fontSize: 12,
+            fontWeight: 600,
+            marginBottom: 4,
+          }}
+        >
           Type
-          <select value={props.type} onChange={(e) => props.setType(e.target.value as any)} style={inputStyle}>
-            <option value="any">Any</option>
-            <option value="drink">Drink</option>
-            <option value="food">Food</option>
-            <option value="both">Food & Drink</option>
-          </select>
         </label>
+        <select
+          value={type}
+          onChange={(e) =>
+            setType(e.target.value as HHType | "any")
+          }
+          style={selectStyle}
+        >
+          <option value="any">Any</option>
+          <option value="food">Food</option>
+          <option value="drink">Drink</option>
+          <option value="both">Food &amp; Drink</option>
+        </select>
+      </div>
 
-        <label style={labelStyle}>
+      {/* Cuisine */}
+      <div>
+        <label
+          style={{
+            display: "block",
+            fontSize: 12,
+            fontWeight: 600,
+            marginBottom: 4,
+          }}
+        >
           Cuisine
-          <select value={props.cuisine} onChange={(e) => props.setCuisine(e.target.value)} style={inputStyle}>
-            <option value="">All</option>
-            {props.allCuisines.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
         </label>
+        <select
+          value={cuisine}
+          onChange={(e) => setCuisine(e.target.value)}
+          style={selectStyle}
+        >
+          <option value="">Any</option>
+          {allCuisines.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+      </div>
 
-        <label style={labelStyle}>
+      {/* Neighborhood */}
+      <div>
+        <label
+          style={{
+            display: "block",
+            fontSize: 12,
+            fontWeight: 600,
+            marginBottom: 4,
+          }}
+        >
           Neighborhood
-          <select value={props.neighborhood} onChange={(e) => props.setNeighborhood(e.target.value)} style={inputStyle}>
-            <option value="">All</option>
-            {props.allNeighborhoods.map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
         </label>
+        <select
+          value={neighborhood}
+          onChange={(e) => setNeighborhood(e.target.value)}
+          style={selectStyle}
+        >
+          <option value="">Any</option>
+          {allNeighborhoods.map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+      </div>
 
-        <label style={labelStyle}>
-          Time filter
-          <select value={props.timeMode} onChange={(e) => props.setTimeMode(e.target.value as any)} style={inputStyle}>
-            <option value="custom">At a time</option>
-            <option value="now">Open now</option>
-          </select>
-        </label>
-
-        <label style={labelStyle}>
+      {/* Time */}
+      <div>
+        <label
+          style={{
+            display: "block",
+            fontSize: 12,
+            fontWeight: 600,
+            marginBottom: 4,
+          }}
+        >
           Time
+        </label>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+          }}
+        >
+          <label style={{ fontSize: 12 }}>
+            <input
+              type="radio"
+              name="timeMode"
+              value="custom"
+              checked={timeMode === "custom"}
+              onChange={() => setTimeMode("custom")}
+              style={{ marginRight: 4 }}
+            />
+            At a time
+          </label>
           <select
-            disabled={props.timeMode !== "custom"}
-            value={props.timeHHMM}
-            onChange={(e) => props.setTimeHHMM(e.target.value)}
-            style={{ ...inputStyle, opacity: props.timeMode === "custom" ? 1 : 0.5 }}
+            value={timeHHMM}
+            onChange={(e) => setTimeHHMM(e.target.value)}
+            style={selectStyle}
+            disabled={timeMode !== "custom"}
           >
-            {TIME_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
+            {timeOptions.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
               </option>
             ))}
           </select>
-        </label>
+          <label style={{ fontSize: 12 }}>
+            <input
+              type="radio"
+              name="timeMode"
+              value="now"
+              checked={timeMode === "now"}
+              onChange={() => setTimeMode("now")}
+              style={{ marginRight: 4 }}
+            />
+            Right now
+          </label>
+        </div>
+      </div>
 
-        <label style={{ ...labelStyle, display: "flex", alignItems: "center", gap: 8 }}>
-          <input
-            type="checkbox"
-            checked={props.showAllDay}
-            onChange={(e) => props.setShowAllDay(e.target.checked)}
-          />
-          Show all for day
-        </label>
-
-        <label style={labelStyle}>
+      {/* Sort + Saved */}
+      <div>
+        <label
+          style={{
+            display: "block",
+            fontSize: 12,
+            fontWeight: 600,
+            marginBottom: 4,
+          }}
+        >
           Sort
-          <select value={props.sort} onChange={(e) => props.setSort(e.target.value as any)} style={inputStyle}>
-            <option value="open">Open first</option>
-            <option value="soon">Starts soon</option>
-            <option value="az">A–Z</option>
-          </select>
         </label>
-
-        <label style={{ ...labelStyle, display: "flex", alignItems: "center", gap: 8 }}>
+        <select
+          value={sort}
+          onChange={(e) =>
+            setSort(e.target.value as "open" | "soon" | "az")
+          }
+          style={selectStyle}
+        >
+          <option value="open">Open now first</option>
+          <option value="soon">Starting soon first</option>
+          <option value="az">A–Z by place</option>
+        </select>
+        <label style={{ display: "block", marginTop: 6, fontSize: 12 }}>
           <input
             type="checkbox"
-            checked={props.showSavedOnly}
-            onChange={(e) => props.setShowSavedOnly(e.target.checked)}
+            checked={showSavedOnly}
+            onChange={(e) => setShowSavedOnly(e.target.checked)}
+            style={{ marginRight: 4 }}
           />
           Saved only
         </label>
       </div>
-    </div>
+    </section>
   );
 }
 
-const cardStyle: React.CSSProperties = {
-  background: "white",
-  border: "1px solid #e6e6e6",
-  borderRadius: 12,
-  padding: 16,
-};
-
-const gridStyle: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-  gap: 12,
-};
-
-const labelStyle: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 6,
+const selectStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "6px 8px",
+  borderRadius: 8,
+  border: "1px solid #ccc",
   fontSize: 13,
-  color: "#333",
-};
-
-const inputStyle: React.CSSProperties = {
-  padding: "10px 10px",
-  borderRadius: 10,
-  border: "1px solid #ddd",
   background: "white",
-  fontSize: 14,
 };
