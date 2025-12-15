@@ -38,7 +38,7 @@ const DAYS: (DayOfWeek | "Today")[] = [
   "Sun",
 ];
 
-// 30-minute increments from 11:00 to 01:30 next day
+// 30-minute increments from 11:00 to 1:30 AM next day
 const timeOptions: { value: string; label: string }[] = (() => {
   const out: { value: string; label: string }[] = [];
   let minutes = 11 * 60; // 11:00
@@ -188,7 +188,7 @@ export default function Filters({
         </select>
       </div>
 
-      {/* Row 2: Time (under Day), Sort (under Type), Saved / Show all under Cuisine/Neighborhood area */}
+      {/* Row 2: Time (under Day), Sort (under Type), Saved & Show all (under others) */}
       <div>
         <label
           style={{
@@ -293,7 +293,7 @@ export default function Filters({
         </label>
       </div>
 
-      {/* Empty spacer to keep grid clean on wide screens */}
+      {/* Spacer to keep grid clean */}
       <div />
     </section>
   );
