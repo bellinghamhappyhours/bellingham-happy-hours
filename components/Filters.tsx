@@ -21,8 +21,6 @@ type Props = {
   setTimeHHMM: (v: string) => void;
   showAllForDay: boolean;
   setShowAllForDay: (v: boolean) => void;
-  sort: "open" | "soon" | "az";
-  setSort: (v: "open" | "soon" | "az") => void;
   showSavedOnly: boolean;
   setShowSavedOnly: (v: boolean) => void;
 };
@@ -76,8 +74,6 @@ export default function Filters({
   setTimeHHMM,
   showAllForDay,
   setShowAllForDay,
-  sort,
-  setSort,
   showSavedOnly,
   setShowSavedOnly,
 }: Props) {
@@ -188,7 +184,7 @@ export default function Filters({
         </select>
       </div>
 
-      {/* Row 2: Time (under Day), Sort (under Type), Saved & Show all (under others) */}
+      {/* Row 2: Time, Show all for day, Saved, spacer */}
       <div>
         <label
           style={{
@@ -235,15 +231,6 @@ export default function Filters({
             />
             Right now
           </label>
-          <label style={{ fontSize: 12, marginTop: 4 }}>
-            <input
-              type="checkbox"
-              checked={showAllForDay}
-              onChange={(e) => setShowAllForDay(e.target.checked)}
-              style={{ marginRight: 4 }}
-            />
-            Show all for day
-          </label>
         </div>
       </div>
 
@@ -256,19 +243,17 @@ export default function Filters({
             marginBottom: 4,
           }}
         >
-          Sort
+          Show
         </label>
-        <select
-          value={sort}
-          onChange={(e) =>
-            setSort(e.target.value as "open" | "soon" | "az")
-          }
-          style={selectStyle}
-        >
-          <option value="open">Happening now first</option>
-          <option value="soon">Starting soon first</option>
-          <option value="az">A–Z by place</option>
-        </select>
+        <label style={{ fontSize: 12 }}>
+          <input
+            type="checkbox"
+            checked={showAllForDay}
+            onChange={(e) => setShowAllForDay(e.target.checked)}
+            style={{ marginRight: 4 }}
+          />
+          Show all for day
+        </label>
       </div>
 
       <div>
@@ -293,7 +278,7 @@ export default function Filters({
         </label>
       </div>
 
-      {/* Spacer to keep grid clean */}
+      {/* Spacer to balance grid */}
       <div />
     </section>
   );

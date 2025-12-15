@@ -9,7 +9,6 @@ import {
   dayLabelFromDate,
   format12h,
   isOpenNow,
-  minutesUntilStart,
   minutesFromHHMM,
 } from "../lib/time";
 
@@ -28,7 +27,6 @@ export default function Page() {
   const [timeMode, setTimeMode] = useState<"now" | "custom">("custom");
   const [timeHHMM, setTimeHHMM] = useState("17:00");
   const [showAllForDay, setShowAllForDay] = useState(false);
-  const [sort, setSort] = useState<"open" | "soon" | "az">("open");
   const [showSavedOnly, setShowSavedOnly] = useState(false);
 
   useEffect(() => {
@@ -63,7 +61,7 @@ export default function Page() {
     const effectiveDay: DayOfWeek =
       day === "Today" ? dayLabelFromDate(now) : day;
 
-    return rows
+    const base = rows
       .filter((r) => r.day_of_week === effectiveDay)
       .filter((r) =>
         type === "any"
@@ -78,7 +76,9 @@ export default function Page() {
       .filter((r) => {
         if (showAllForDay) return true;
 
-        if (timeMode === "now") return isOpenNow(r, now);
+        if (timeMode === "now") {
+          return isOpenNow(r, now);
+        }
 
         const targetMin = minutesFromHHMM(timeHHMM);
         const start = minutesFromHHMM(r.start_time);
@@ -89,31 +89,15 @@ export default function Page() {
         const tAdj =
           crosses && targetMin < start ? targetMin + 24 * 60 : targetMin;
         return tAdj >= start && tAdj <= end;
-      })
-      .sort((a, b) => {
-        if (sort === "az") return a.venue_name.localeCompare(b.venue_name);
-
-        const aOpen = isOpenNow(a, now);
-        const bOpen = isOpenNow(b, now);
-
-        if (sort === "open") {
-          if (aOpen !== bOpen) return aOpen ? -1 : 1;
-        }
-
-        const aUntil = minutesUntilStart(a, now);
-        const bUntil = minutesUntilStart(b, now);
-
-        if (sort === "soon") {
-          const av = aOpen ? -1 : aUntil ?? 99999;
-          const bv = bOpen ? -1 : bUntil ?? 99999;
-          return av - bv;
-        }
-
-        const av = aOpen ? -1 : aUntil ?? 99999;
-        const bv = bOpen ? -1 : bUntil ?? 99999;
-        if (av !== bv) return av - bv;
-        return a.venue_name.localeCompare(b.venue_name);
       });
+
+    // Default sort: earliest start time first, then A–Z by place
+    return base.sort((a, b) => {
+      const aStart = minutesFromHHMM(a.start_time);
+      const bStart = minutesFromHHMM(b.start_time);
+      if (aStart !== bStart) return aStart - bStart;
+      return a.venue_name.localeCompare(b.venue_name);
+    });
   }, [
     rows,
     day,
@@ -123,7 +107,6 @@ export default function Page() {
     timeMode,
     timeHHMM,
     showAllForDay,
-    sort,
     showSavedOnly,
     favorites,
   ]);
@@ -162,8 +145,6 @@ export default function Page() {
         setTimeHHMM={setTimeHHMM}
         showAllForDay={showAllForDay}
         setShowAllForDay={setShowAllForDay}
-        sort={sort}
-        setSort={setSort}
         showSavedOnly={showSavedOnly}
         setShowSavedOnly={setShowSavedOnly}
       />
@@ -224,86 +205,97 @@ export default function Page() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((r) => (
-                  <tr key={r.id} style={{ borderTop: "1px solid #eee" }}>
-                    <td style={tdStyle}>
-                      <button
-                        onClick={() => favorites.toggle(r.id)}
-                        aria-label="Save"
-                        style={iconButtonStyle}
-                      >
-                        {favorites.has(r.id) ? "♥" : "♡"}
-                      </button>
-                    </td>
-                    <td style={tdStyle}>
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 4,
-                        }}
-                      >
-                        <span style={{ fontWeight: 600 }}>
-                          {r.venue_name}
-                        </span>
-                        {r.notes && (
-                          <span
-                            style={{
-                              fontSize: 12,
-                              color: "#666",
-                            }}
-                          >
-                            {r.notes}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td style={tdStyle}>
-                      {format12h(r.start_time)}–{format12h(r.end_time)}
-                    </td>
-                    <td style={tdStyle}>
-                      {r.deal_label ? (
-                        <span style={dealPillStyle(r.deal_label)}>
-                          {r.deal_label}
-                        </span>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td style={tdStyle}>{r.type}</td>
-                    <td style={tdStyle}>{r.cuisine_tags.join(", ")}</td>
-                    <td style={tdStyle}>{r.neighborhood || "—"}</td>
-                    <td style={tdStyle}>
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 10,
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        <a
-                          href={r.menu_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={linkStyle}
+                {filtered.map((r) => {
+                  const typeLabel =
+                    r.type === "both"
+                      ? "Food & Drink"
+                      : r.type === "food"
+                      ? "Food"
+                      : r.type === "drink"
+                      ? "Drink"
+                      : r.type;
+
+                  return (
+                    <tr key={r.id} style={{ borderTop: "1px solid #eee" }}>
+                      <td style={tdStyle}>
+                        <button
+                          onClick={() => favorites.toggle(r.id)}
+                          aria-label="Save"
+                          style={iconButtonStyle}
                         >
-                          Menu
-                        </a>
-                        {r.website_url ? (
+                          {favorites.has(r.id) ? "♥" : "♡"}
+                        </button>
+                      </td>
+                      <td style={tdStyle}>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 4,
+                          }}
+                        >
+                          <span style={{ fontWeight: 600 }}>
+                            {r.venue_name}
+                          </span>
+                          {r.notes && (
+                            <span
+                              style={{
+                                fontSize: 12,
+                                color: "#666",
+                              }}
+                            >
+                              {r.notes}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td style={tdStyle}>
+                        {format12h(r.start_time)}–{format12h(r.end_time)}
+                      </td>
+                      <td style={tdStyle}>
+                        {r.deal_label ? (
+                          <span style={dealPillStyle(r.deal_label)}>
+                            {r.deal_label}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td style={tdStyle}>{typeLabel}</td>
+                      <td style={tdStyle}>{r.cuisine_tags.join(", ")}</td>
+                      <td style={tdStyle}>{r.neighborhood || "—"}</td>
+                      <td style={tdStyle}>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 10,
+                            flexWrap: "wrap",
+                          }}
+                        >
                           <a
-                            href={r.website_url}
+                            href={r.menu_url}
                             target="_blank"
                             rel="noreferrer"
                             style={linkStyle}
                           >
-                            Website
+                            Menu
                           </a>
-                        ) : null}
-                      </div>
-                    </td>
-                    <td style={tdStyle}>{r.last_verified || "—"}</td>
-                  </tr>
-                ))}
+                          {r.website_url ? (
+                            <a
+                              href={r.website_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={linkStyle}
+                            >
+                              Website
+                            </a>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td style={tdStyle}>{r.last_verified || "—"}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
