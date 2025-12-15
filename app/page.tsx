@@ -19,6 +19,10 @@ const DAY_NAMES = [
   "Saturday",
 ];
 
+function normalizeDayName(v: string | undefined | null): string {
+  return (v || "").trim().toLowerCase();
+}
+
 export default function Page() {
   const [rows, setRows] = useState<HappyHourRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,10 +70,15 @@ export default function Page() {
     const todayName = DAY_NAMES[now.getDay()];
     const effectiveDay = day === "Today" ? todayName : day;
 
+    const normEffective = normalizeDayName(effectiveDay);
+
     return rows
-      // Day match
-      .filter((r) => r.day_of_week === effectiveDay)
-      // Type filter: "any" | Food | Drink | Food and Drink
+      // 1) Day match – now case-insensitive + trimmed on BOTH sides
+      .filter((r) => {
+        const normRowDay = normalizeDayName(r.day_of_week);
+        return normRowDay === normEffective;
+      })
+      // 2) Type filter: "any" | Food | Drink | Food and Drink
       .filter((r) => {
         if (type === "any") return true;
         const rowType = (r.type || "").toLowerCase();
@@ -85,15 +94,15 @@ export default function Page() {
         }
         return true;
       })
-      // Cuisine filter
+      // 3) Cuisine filter
       .filter((r) => (cuisine ? r.cuisine_tags.includes(cuisine) : true))
-      // Neighborhood filter
+      // 4) Neighborhood filter
       .filter((r) =>
         neighborhood ? (r.neighborhood || "").trim() === neighborhood : true
       )
-      // Saved only
+      // 5) Saved only
       .filter((r) => (showSavedOnly ? favorites.has(r.id) : true))
-      // Time filtering
+      // 6) Time filtering
       .filter((r) => {
         if (showAllForDay) return true;
 
@@ -121,7 +130,7 @@ export default function Page() {
 
         return tAdj >= start && tAdj <= end;
       })
-      // Sort by start time, then venue name
+      // 7) Sort by start time, then venue name
       .sort((a, b) => {
         const aStart = minutesFromHHMM(a.start_time);
         const bStart = minutesFromHHMM(b.start_time);
