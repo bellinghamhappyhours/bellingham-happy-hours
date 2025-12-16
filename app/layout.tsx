@@ -1,6 +1,12 @@
 import Script from "next/script";
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { Inter } from "next/font/google";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Bellingham Happy Hours",
@@ -20,7 +26,7 @@ export default function RootLayout({
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
 
   return (
-    <html lang="en">
+    <html lang="en" className={inter.className}>
       <body>
         {gaId ? (
           <>
