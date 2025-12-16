@@ -171,6 +171,10 @@ export default function Page() {
         <div style={{ color: "#555", fontSize: 14 }}>
           Filter by day, time, and cuisine. Menu links go straight to the source.
         </div>
+        <div style={{ color: "#666", fontSize: 13, lineHeight: 1.4, maxWidth: 720 }}>
+          I built this tool for myself and figured the community and local businesses
+          would benefit from it too.
+        </div>
       </header>
 
       <Filters
@@ -303,19 +307,34 @@ export default function Page() {
       </div>
 
       <footer style={{ padding: "18px 2px", color: "#777", fontSize: 12 }}>
-        <div style={{ marginBottom: 4 }}>
-          Corrections or menu updates?{" "}
-          <a
-            href="mailto:bellinghamhappyhours@gmail.com"
-            style={{ color: "#111", textDecoration: "underline" }}
-          >
-            bellinghamhappyhours@gmail.com
-          </a>
-        </div>
-        <div>
-          Beta: Hours and specials can change quickly. Please confirm details with the venue.
-        </div>
-      </footer>
+      <div style={{ marginBottom: 4 }}>
+        Corrections or menu updates?{" "}
+        <a
+          href="mailto:bellinghamhappyhours@gmail.com"
+          style={{ color: "#111", textDecoration: "underline" }}
+        >
+          bellinghamhappyhours@gmail.com
+        </a>
+      </div>
+
+      <div style={{ marginBottom: 4 }}>
+        Instagram (under development):{" "}
+        <a
+          href="https://www.instagram.com/BHAMhappyhours/"
+          target="_blank"
+          rel="noreferrer"
+          style={{ color: "#111", textDecoration: "underline" }}
+        >
+          @BHAMhappyhours
+        </a>
+      </div>
+
+      <div>
+        Beta: Hours & specials can change quickly. Please confirm details with the
+        venue.
+      </div>
+    </footer>
+
     </div>
   );
 }
