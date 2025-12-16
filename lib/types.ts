@@ -1,6 +1,3 @@
-// lib/types.ts
-
-// Day names exactly as they appear in the sheet
 export type DayOfWeek =
   | "Monday"
   | "Tuesday"
@@ -10,42 +7,23 @@ export type DayOfWeek =
   | "Saturday"
   | "Sunday";
 
-// Allow both the new labels and any older lowercase/both values
-export type HHType =
-  | "Food"
-  | "Drink"
-  | "Food and Drink"
-  | "food"
-  | "drink"
-  | "both";
+export type HHType = "Food" | "Drink" | "Food and Drink";
 
-// One row from the Google Sheet, after parsing
 export type HappyHourRow = {
   id: string;
-
   venue_name: string;
-  neighborhood?: string;
-
-  // Split from the comma-separated `cuisine_tags` column
+  neighborhood: string;
   cuisine_tags: string[];
-
   menu_url: string;
   website_url?: string;
 
   day_of_week: DayOfWeek;
-
-  // "HH:MM" 24-hour strings
-  start_time: string;
-  end_time: string;
+  start_time: string; // "HH:MM"
+  end_time: string; // "HH:MM"
 
   type: HHType | string;
 
-  // e.g. "Happy Hour", "Late Night", "Taco Tuesday"
   deal_label?: string;
-
-  // Freeform notes from the sheet
   notes?: string;
-
-  // YYYY-MM-DD, optional
   last_verified?: string;
 };

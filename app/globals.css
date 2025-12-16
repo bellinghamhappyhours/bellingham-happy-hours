@@ -1,75 +1,81 @@
-/* ---------- Filter layout ---------- */
+/* --- Filters layout --- */
+.filtersCard {
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  padding: 16px;
+  background: #fff;
+}
 
-.filters {
-    background: #ffffff;
-    border: 1px solid #e6e6e6;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 12px;
+.filtersRowTop {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+
+.filtersRowBottom {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: minmax(0, 420px) minmax(0, 220px) minmax(0, 220px);
+  gap: 14px;
+  align-items: start;
+}
+
+.field {
+  min-width: 0;
+}
+
+.fieldLabel {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.select {
+  width: 100%;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid #d6d6d6;
+  padding: 0 12px;
+  background: #fff;
+  font-size: 14px;
+}
+
+.radioRow {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.radioItem {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 14px;
+}
+
+.checkRow {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 14px;
+  margin-top: 6px;
+}
+
+/* Mobile: stack vertically and eliminate horizontal scroll */
+@media (max-width: 720px) {
+  .filtersRowTop {
+    grid-template-columns: 1fr;
   }
-  
-  .filters-row {
-    display: grid;
-    gap: 12px;
+
+  .filtersRowBottom {
+    grid-template-columns: 1fr;
   }
-  
-  .filters-row-top {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    margin-bottom: 16px;
+
+  .radioRow {
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
-  
-  .filters-row-bottom {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    align-items: flex-end;
-  }
-  
-  .filter-block {
-    min-width: 0;
-  }
-  
-  .filter-label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 4px;
-    color: #444;
-  }
-  
-  .filter-select {
-    width: 100%;
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    font-size: 14px;
-    background: #fff;
-  }
-  
-  .filter-radio-row {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    margin-bottom: 6px;
-    font-size: 14px;
-  }
-  
-  .filter-radio-option {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-  
-  .filter-checkbox-row {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-  }
-  
-  /* Mobile: stack filters vertically, no sideways scrolling */
-  @media (max-width: 800px) {
-    .filters-row-top,
-    .filters-row-bottom {
-      grid-template-columns: 1fr;
-    }
-  }
-  
+}

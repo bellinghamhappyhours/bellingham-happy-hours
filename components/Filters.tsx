@@ -19,8 +19,8 @@ type Props = {
   neighborhood: string;
   setNeighborhood: (v: string) => void;
 
-  timeMode: "now" | "custom";
-  setTimeMode: (v: "now" | "custom") => void;
+  timeMode: "custom" | "now";
+  setTimeMode: (v: "custom" | "now") => void;
 
   timeHHMM: string;
   setTimeHHMM: (v: string) => void;
@@ -32,7 +32,6 @@ type Props = {
   setShowSavedOnly: (v: boolean) => void;
 };
 
-// Must match your sheet values exactly for filtering to work.
 const DAYS: (DayOfWeek | "Today")[] = [
   "Today",
   "Monday",
@@ -44,23 +43,36 @@ const DAYS: (DayOfWeek | "Today")[] = [
   "Sunday",
 ];
 
-// 30-minute increments from 11:00 AM to 1:30 AM (next day)
-function buildTimeOptions(): { value: string; label: string }[] {
-  const out: { value: string; label: string }[] = [];
+const TYPES: (HHType | "any")[] = ["any", "Food", "Drink", "Food and Drink"];
+
+function labelDay(d: DayOfWeek | "Today") {
+  if (d === "Today") return "Today";
+  return d;
+}
+
+function format12hFromHHMM(hhmm: string) {
+  const [hStr, mStr] = hhmm.split(":");
+  const h24 = Number(hStr);
+  const m = Number(mStr);
+  const suffix = h24 >= 12 ? "PM" : "AM";
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  const mm = String(m).padStart(2, "0");
+  return `${h12}:${mm} ${suffix}`;
+}
+
+// 30-minute increments from 11:00 to 1:30 AM (next day)
+function buildTimeOptions(): string[] {
   const start = 11 * 60; // 11:00
-  const end = 25 * 60 + 30; // 1:30 next day
+  const end = 25 * 60 + 30; // 1:30 AM next day
+  const out: string[] = [];
 
-  for (let m = start; m <= end; m += 30) {
-    const minutesInDay = m % (24 * 60);
-    const hh = Math.floor(minutesInDay / 60);
-    const mm = minutesInDay % 60;
+  for (let t = start; t <= end; t += 30) {
+    let mins = t;
+    if (mins >= 24 * 60) mins -= 24 * 60;
 
-    const isPM = hh >= 12;
-    const h12 = ((hh + 11) % 12) + 1;
-    const label = `${h12}:${mm.toString().padStart(2, "0")} ${isPM ? "PM" : "AM"}`;
-
-    const value = `${hh.toString().padStart(2, "0")}:${mm.toString().padStart(2, "0")}`;
-    out.push({ value, label });
+    const hh = Math.floor(mins / 60);
+    const mm = mins % 60;
+    out.push(`${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`);
   }
 
   return out;
@@ -68,34 +80,32 @@ function buildTimeOptions(): { value: string; label: string }[] {
 
 const TIME_OPTIONS = buildTimeOptions();
 
-export default function Filters(props: Props) {
-  const {
-    allCuisines,
-    allNeighborhoods,
-    day,
-    setDay,
-    type,
-    setType,
-    cuisine,
-    setCuisine,
-    neighborhood,
-    setNeighborhood,
-    timeMode,
-    setTimeMode,
-    timeHHMM,
-    setTimeHHMM,
-    showAllForDay,
-    setShowAllForDay,
-    showSavedOnly,
-    setShowSavedOnly,
-  } = props;
-
+export default function Filters({
+  allCuisines,
+  allNeighborhoods,
+  day,
+  setDay,
+  type,
+  setType,
+  cuisine,
+  setCuisine,
+  neighborhood,
+  setNeighborhood,
+  timeMode,
+  setTimeMode,
+  timeHHMM,
+  setTimeHHMM,
+  showAllForDay,
+  setShowAllForDay,
+  showSavedOnly,
+  setShowSavedOnly,
+}: Props) {
   return (
-    <div className="filtersCard">
+    <section className="filtersCard">
       {/* Row 1: Day / Type / Cuisine / Neighborhood */}
-      <div className="row row1">
-        <div className="group">
-          <div className="label">Day</div>
+      <div className="filtersRowTop">
+        <div className="field">
+          <label className="fieldLabel">Day</label>
           <select
             className="select"
             value={day}
@@ -103,34 +113,35 @@ export default function Filters(props: Props) {
           >
             {DAYS.map((d) => (
               <option key={d} value={d}>
-                {d === "Today" ? "Today" : d}
+                {labelDay(d)}
               </option>
             ))}
           </select>
         </div>
 
-        <div className="group">
-          <div className="label">Type</div>
+        <div className="field">
+          <label className="fieldLabel">Type</label>
           <select
             className="select"
             value={type}
             onChange={(e) => setType(e.target.value as HHType | "any")}
           >
-            <option value="any">Any</option>
-            <option value="Food">Food</option>
-            <option value="Drink">Drink</option>
-            <option value="Food and Drink">Food and Drink</option>
+            {TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t === "any" ? "Any" : t}
+              </option>
+            ))}
           </select>
         </div>
 
-        <div className="group">
-          <div className="label">Cuisine</div>
+        <div className="field">
+          <label className="fieldLabel">Cuisine</label>
           <select
             className="select"
-            value={cuisine || ""}
-            onChange={(e) => setCuisine(e.target.value)}
+            value={cuisine || "any"}
+            onChange={(e) => setCuisine(e.target.value === "any" ? "" : e.target.value)}
           >
-            <option value="">All</option>
+            <option value="any">Any</option>
             {allCuisines.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -139,14 +150,14 @@ export default function Filters(props: Props) {
           </select>
         </div>
 
-        <div className="group">
-          <div className="label">Neighborhood</div>
+        <div className="field">
+          <label className="fieldLabel">Neighborhood</label>
           <select
             className="select"
-            value={neighborhood || ""}
-            onChange={(e) => setNeighborhood(e.target.value)}
+            value={neighborhood || "any"}
+            onChange={(e) => setNeighborhood(e.target.value === "any" ? "" : e.target.value)}
           >
-            <option value="">All</option>
+            <option value="any">Any</option>
             {allNeighborhoods.map((n) => (
               <option key={n} value={n}>
                 {n}
@@ -156,13 +167,13 @@ export default function Filters(props: Props) {
         </div>
       </div>
 
-      {/* Row 2: Time / Show All / Saved Only */}
-      <div className="row row2">
-        <div className="group">
-          <div className="label">Time filter</div>
+      {/* Row 2: Time filter + show all + saved */}
+      <div className="filtersRowBottom">
+        <div className="field">
+          <label className="fieldLabel">Time filter</label>
 
-          <div className="timeToggleRow">
-            <label className="radioRow">
+          <div className="radioRow">
+            <label className="radioItem">
               <input
                 type="radio"
                 name="timeMode"
@@ -172,7 +183,7 @@ export default function Filters(props: Props) {
               <span>At a time</span>
             </label>
 
-            <label className="radioRow">
+            <label className="radioItem">
               <input
                 type="radio"
                 name="timeMode"
@@ -188,17 +199,18 @@ export default function Filters(props: Props) {
             value={timeHHMM}
             onChange={(e) => setTimeHHMM(e.target.value)}
             disabled={timeMode === "now"}
+            aria-disabled={timeMode === "now"}
           >
             {TIME_OPTIONS.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
+              <option key={t} value={t}>
+                {format12hFromHHMM(t)}
               </option>
             ))}
           </select>
         </div>
 
-        <div className="group">
-          <div className="label">Show all for day</div>
+        <div className="field">
+          <label className="fieldLabel">Show all for day</label>
           <label className="checkRow">
             <input
               type="checkbox"
@@ -209,8 +221,8 @@ export default function Filters(props: Props) {
           </label>
         </div>
 
-        <div className="group">
-          <div className="label">Saved only</div>
+        <div className="field">
+          <label className="fieldLabel">Saved only</label>
           <label className="checkRow">
             <input
               type="checkbox"
@@ -221,92 +233,6 @@ export default function Filters(props: Props) {
           </label>
         </div>
       </div>
-
-      <style jsx>{`
-        .filtersCard {
-          background: white;
-          border: 1px solid #e6e6e6;
-          border-radius: 12px;
-          padding: 16px;
-        }
-
-        .row {
-          display: grid;
-          gap: 14px;
-        }
-
-        /* Desktop/tablet layout */
-        .row1 {
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-        }
-
-        .row2 {
-          margin-top: 14px;
-          grid-template-columns: minmax(260px, 1.3fr) minmax(180px, 1fr) minmax(180px, 1fr);
-          align-items: start;
-        }
-
-        .group {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          min-width: 0;
-        }
-
-        .label {
-          font-size: 14px;
-          font-weight: 600;
-          color: #111;
-        }
-
-        .select {
-          width: 100%;
-          padding: 10px 12px;
-          border-radius: 10px;
-          border: 1px solid #d6d6d6;
-          background: white;
-          font-size: 14px;
-          min-width: 0;
-        }
-
-        .timeToggleRow {
-          display: flex;
-          gap: 18px;
-          align-items: center;
-          flex-wrap: wrap;
-        }
-
-        .radioRow {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 14px;
-          color: #111;
-        }
-
-        .checkRow {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 14px;
-          color: #111;
-        }
-
-        /* Mobile: stack everything vertically so nothing is off-screen */
-        @media (max-width: 720px) {
-          .row1 {
-            grid-template-columns: 1fr;
-          }
-
-          .row2 {
-            grid-template-columns: 1fr;
-          }
-
-          .timeToggleRow {
-            gap: 14px;
-          }
-        }
-      `}</style>
-    </div>
+    </section>
   );
 }
