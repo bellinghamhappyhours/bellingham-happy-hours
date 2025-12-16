@@ -3,13 +3,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Filters from "../components/Filters";
 import { useFavorites } from "../components/useFavorites";
-import type { HappyHourRow } from "../lib/types";
+import type { HappyHourRow, DayOfWeek, HHType } from "../lib/types";
 import { format12h, isOpenNow, minutesFromHHMM } from "../lib/time";
 
 type ApiResponse = { rows: HappyHourRow[] };
 
 // For mapping "Today" to a sheet day name
-const DAY_NAMES = [
+const DAY_NAMES: DayOfWeek[] = [
   "Sunday",
   "Monday",
   "Tuesday",
@@ -17,7 +17,7 @@ const DAY_NAMES = [
   "Thursday",
   "Friday",
   "Saturday",
-];
+] as unknown as DayOfWeek[];
 
 function normalizeDayName(v: string | undefined | null): string {
   return (v || "").trim().toLowerCase();
@@ -29,8 +29,10 @@ export default function Page() {
 
   const favorites = useFavorites();
 
-  const [day, setDay] = useState<string | "Today">("Today");
-  const [type, setType] = useState<string | "any">("any");
+  // ✅ IMPORTANT: use the same types Filters expects
+  const [day, setDay] = useState<DayOfWeek | "Today">("Today");
+  const [type, setType] = useState<HHType | "any">("any");
+
   const [cuisine, setCuisine] = useState("");
   const [neighborhood, setNeighborhood] = useState("");
   const [timeMode, setTimeMode] = useState<"now" | "custom">("custom");
@@ -67,20 +69,19 @@ export default function Page() {
 
   const filtered = useMemo(() => {
     const now = new Date();
-    const todayName = DAY_NAMES[now.getDay()];
-    const effectiveDay = day === "Today" ? todayName : day;
+    const todayName = DAY_NAMES[now.getDay()] || "Monday";
+    const effectiveDay: DayOfWeek = day === "Today" ? todayName : day;
 
     const normEffective = normalizeDayName(effectiveDay);
 
     return rows
-      // 1) Day match – now case-insensitive + trimmed on BOTH sides
-      .filter((r) => {
-        const normRowDay = normalizeDayName(r.day_of_week);
-        return normRowDay === normEffective;
-      })
-      // 2) Type filter: "any" | Food | Drink | Food and Drink
+      // 1) Day match – case-insensitive + trimmed on BOTH sides
+      .filter((r) => normalizeDayName(r.day_of_week) === normEffective)
+
+      // 2) Type filter: any | Food | Drink | Food and Drink
       .filter((r) => {
         if (type === "any") return true;
+
         const rowType = (r.type || "").toLowerCase();
 
         if (type === "Food") {
@@ -94,14 +95,18 @@ export default function Page() {
         }
         return true;
       })
+
       // 3) Cuisine filter
       .filter((r) => (cuisine ? r.cuisine_tags.includes(cuisine) : true))
+
       // 4) Neighborhood filter
       .filter((r) =>
         neighborhood ? (r.neighborhood || "").trim() === neighborhood : true
       )
+
       // 5) Saved only
       .filter((r) => (showSavedOnly ? favorites.has(r.id) : true))
+
       // 6) Time filtering
       .filter((r) => {
         if (showAllForDay) return true;
@@ -114,6 +119,7 @@ export default function Page() {
         const targetMin = minutesFromHHMM(timeHHMM);
         const start = minutesFromHHMM(r.start_time);
         let end = minutesFromHHMM(r.end_time);
+
         if (
           Number.isNaN(start) ||
           Number.isNaN(end) ||
@@ -130,6 +136,7 @@ export default function Page() {
 
         return tAdj >= start && tAdj <= end;
       })
+
       // 7) Sort by start time, then venue name
       .sort((a, b) => {
         const aStart = minutesFromHHMM(a.start_time);
@@ -162,8 +169,7 @@ export default function Page() {
       >
         <h1 style={{ margin: 0, fontSize: 28 }}>Bellingham Happy Hours</h1>
         <div style={{ color: "#555", fontSize: 14 }}>
-          Filter by day, time, and cuisine. Menu links go straight to the
-          source.
+          Filter by day, time, and cuisine. Menu links go straight to the source.
         </div>
       </header>
 
@@ -202,9 +208,7 @@ export default function Page() {
           <div style={{ fontSize: 14, color: "#333" }}>
             {loading
               ? "Loading…"
-              : `${filtered.length} result${
-                  filtered.length === 1 ? "" : "s"
-                }`}
+              : `${filtered.length} result${filtered.length === 1 ? "" : "s"}`}
           </div>
           <button
             onClick={() => favorites.clear()}
@@ -225,13 +229,7 @@ export default function Page() {
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr
-                  style={{
-                    textAlign: "left",
-                    fontSize: 12,
-                    color: "#666",
-                  }}
-                >
+                <tr style={{ textAlign: "left", fontSize: 12, color: "#666" }}>
                   <th style={thStyle}>Save</th>
                   <th style={thStyle}>Place</th>
                   <th style={thStyle}>When</th>
@@ -274,13 +272,7 @@ export default function Page() {
                     <td style={tdStyle}>{r.cuisine_tags.join(", ")}</td>
                     <td style={tdStyle}>{r.neighborhood || "—"}</td>
                     <td style={tdStyle}>
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 10,
-                          flexWrap: "wrap",
-                        }}
-                      >
+                      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                         <a
                           href={r.menu_url}
                           target="_blank"
@@ -321,8 +313,7 @@ export default function Page() {
           </a>
         </div>
         <div>
-          Beta: Hours and specials can change quickly. Please confirm details
-          with the venue.
+          Beta: Hours and specials can change quickly. Please confirm details with the venue.
         </div>
       </footer>
     </div>
@@ -393,37 +384,14 @@ function dealPillStyle(label: string): React.CSSProperties {
   const v = label.toLowerCase();
 
   if (v.includes("happy hour")) {
-    return {
-      ...base,
-      border: "1px solid #d7f0d7",
-      background: "#effaf0",
-      color: "#1d6b2a",
-    };
+    return { ...base, border: "1px solid #d7f0d7", background: "#effaf0", color: "#1d6b2a" };
   }
-
   if (v.includes("late night")) {
-    return {
-      ...base,
-      border: "1px solid #e0d7f0",
-      background: "#f2effa",
-      color: "#4b2ca3",
-    };
+    return { ...base, border: "1px solid #e0d7f0", background: "#f2effa", color: "#4b2ca3" };
   }
-
   if (v.includes("taco")) {
-    return {
-      ...base,
-      border: "1px solid #ffe2bf",
-      background: "#fff4e5",
-      color: "#b15b07",
-    };
+    return { ...base, border: "1px solid #ffe2bf", background: "#fff4e5", color: "#b15b07" };
   }
 
-  // default / other specials
-  return {
-    ...base,
-    border: "1px solid #e0e0e0",
-    background: "#f5f5f5",
-    color: "#555",
-  };
+  return { ...base, border: "1px solid #e0e0e0", background: "#f5f5f5", color: "#555" };
 }
