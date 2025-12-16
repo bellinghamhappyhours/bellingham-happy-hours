@@ -64,18 +64,22 @@
   margin-top: 6px;
 }
 
-/* Mobile: stack vertically and eliminate horizontal scroll */
-@media (max-width: 720px) {
-  .filtersRowTop {
-    grid-template-columns: 1fr;
-  }
 
-  .filtersRowBottom {
-    grid-template-columns: 1fr;
+/* Mobile: stack vertically and eliminate horizontal scroll
+   - max-width handles normal responsive
+   - hover/pointer handles iOS Safari cases where layout viewport is larger */
+   @media (max-width: 720px), (hover: none) and (pointer: coarse) {
+    .filtersRowTop {
+      grid-template-columns: 1fr !important;
+    }
+  
+    .filtersRowBottom {
+      grid-template-columns: 1fr !important;
+    }
+  
+    .radioRow {
+      justify-content: flex-start;
+      flex-wrap: wrap;
+    }
   }
-
-  .radioRow {
-    justify-content: flex-start;
-    flex-wrap: wrap;
-  }
-}
+  
