@@ -171,10 +171,12 @@ export default function Page() {
         <div style={{ color: "#555", fontSize: 14 }}>
           Filter by day, time, and cuisine. Menu links go straight to the source.
         </div>
+      {/*
         <div style={{ color: "#666", fontSize: 13, lineHeight: 1.4, maxWidth: 720 }}>
           I built this tool for myself and figured the community and local businesses
           would benefit from it too.
         </div>
+      */}
       </header>
 
       <Filters
