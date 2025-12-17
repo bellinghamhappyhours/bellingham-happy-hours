@@ -19,7 +19,8 @@ export type HappyHourRow = {
 
   day_of_week: DayOfWeek;
   start_time: string; // "HH:MM"
-  end_time: string; // "HH:MM"
+  end_time: string; // "HH:MM" or "Close"
+  close_time?: string; // "HH:MM" (only used when end_time === "Close")
 
   type: HHType | string;
 

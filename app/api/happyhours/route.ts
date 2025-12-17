@@ -65,17 +65,19 @@ export async function GET() {
         const day = rawDay as DayOfWeek;
 
         if (!VALID_DAYS.includes(day)) {
-          // If the day doesn't match our allowed set, skip the row
           return null;
         }
 
-        // Basic time strings, passed through as-is ("HH:MM")
+        // Basic time strings, passed through as-is ("HH:MM") OR "Close"
         const start_time = (r.start_time || "").trim();
         const end_time = (r.end_time || "").trim();
 
         if (!start_time || !end_time) {
           return null;
         }
+
+        // Optional: only used when end_time === "Close"
+        const close_time = (r.close_time || "").trim() || undefined;
 
         // Build a stable-ish id
         const id =
@@ -85,6 +87,7 @@ export async function GET() {
             day,
             start_time,
             end_time,
+            close_time || "",
             (r.deal_label || "").trim(),
           ].join("|");
 
@@ -98,6 +101,7 @@ export async function GET() {
           day_of_week: day,
           start_time,
           end_time,
+          close_time, // <-- NEW (safe if undefined)
           type: (r.type || "").trim(),
           deal_label: (r.deal_label || "").trim() || undefined,
           notes: (r.notes || "").trim() || undefined,
