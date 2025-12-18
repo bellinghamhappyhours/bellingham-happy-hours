@@ -38,7 +38,7 @@ export function format12h(hhmm: string): string {
   if (h === 0) h = 12;
 
   const mm = String(m).padStart(2, "0");
-  return `${h}:${mm} ${suffix}`;
+  return `${h}:${mm}${suffix}`;
 }
 
 function resolvedStartHHMM(row: HappyHourRow): string {

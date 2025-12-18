@@ -274,7 +274,9 @@ export default function Page() {
                     <td style={tdStyle}>
                       <div style={{ fontWeight: 600 }}>{r.venue_name}</div>
                     </td>
+                  
                     <td style={tdStyle}>{formatDealWindow(r)}</td>
+
                     <td style={tdStyle}>
                       {r.deal_label ? (
                         <span style={dealPillStyle(r.deal_label)}>
@@ -365,20 +367,12 @@ function formatDealWindow(r: HappyHourRow): string {
   const sIsOpen = sRaw.toLowerCase() === "open";
   const eIsClose = eRaw.toLowerCase() === "close";
 
-  const left = sIsOpen
-    ? r.open_time
-      ? `Open (${format12h(r.open_time)})`
-      : "Open"
-    : format12h(sRaw);
+  const left = sIsOpen ? "Open" : format12h(sRaw);
+  const right = eIsClose ? "Close" : format12h(eRaw);
 
-  const right = eIsClose
-    ? r.close_time
-      ? `Close (${format12h(r.close_time)})`
-      : "Close"
-    : format12h(eRaw);
-
-  return `${left}–${right}`;
+  return `${left} - ${right}`;
 }
+
 
 
 const cardStyle: React.CSSProperties = {
