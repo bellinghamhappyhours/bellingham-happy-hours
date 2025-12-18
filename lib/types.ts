@@ -18,9 +18,14 @@ export type HappyHourRow = {
   website_url?: string;
 
   day_of_week: DayOfWeek;
-  start_time: string; // "HH:MM"
-  end_time: string; // "HH:MM" or "Close"
-  close_time?: string; // "HH:MM" (only used when end_time === "Close")
+
+  // Deal window start/end can be "HH:MM" OR the keywords "Open" / "Close"
+  start_time: string;
+  end_time: string;
+
+  // Only used when start_time === "Open" or end_time === "Close"
+  open_time?: string; // "HH:MM"
+  close_time?: string; // "HH:MM"
 
   type: HHType | string;
 

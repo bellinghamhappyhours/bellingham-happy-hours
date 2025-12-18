@@ -23,6 +23,16 @@ function normalizeDayName(v: string | undefined | null): string {
   return (v || "").trim().toLowerCase();
 }
 
+function resolvedStartHHMM(r: HappyHourRow): string {
+  const s = (r.start_time || "").trim().toLowerCase();
+  return s === "open" ? (r.open_time || "").trim() : (r.start_time || "").trim();
+}
+
+function resolvedEndHHMM(r: HappyHourRow): string {
+  const e = (r.end_time || "").trim().toLowerCase();
+  return e === "close" ? (r.close_time || "").trim() : (r.end_time || "").trim();
+}
+
 export default function Page() {
   const [rows, setRows] = useState<HappyHourRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,8 +127,9 @@ export default function Page() {
         }
 
         const targetMin = minutesFromHHMM(timeHHMM);
-        const start = minutesFromHHMM(r.start_time);
-        let end = minutesFromHHMM(r.end_time);
+        const start = minutesFromHHMM(resolvedStartHHMM(r));
+        let end = minutesFromHHMM(resolvedEndHHMM(r));
+
 
         if (
           Number.isNaN(start) ||
@@ -139,8 +150,9 @@ export default function Page() {
 
       // 7) Sort by start time, then venue name
       .sort((a, b) => {
-        const aStart = minutesFromHHMM(a.start_time);
-        const bStart = minutesFromHHMM(b.start_time);
+        const aStart = minutesFromHHMM(resolvedStartHHMM(a));
+        const bStart = minutesFromHHMM(resolvedStartHHMM(b));
+
         if (aStart !== bStart) return aStart - bStart;
         return a.venue_name.localeCompare(b.venue_name);
       });
@@ -262,9 +274,7 @@ export default function Page() {
                     <td style={tdStyle}>
                       <div style={{ fontWeight: 600 }}>{r.venue_name}</div>
                     </td>
-                    <td style={tdStyle}>
-                      {format12h(r.start_time)}–{format12h(r.end_time)}
-                    </td>
+                    <td style={tdStyle}>{formatDealWindow(r)}</td>
                     <td style={tdStyle}>
                       {r.deal_label ? (
                         <span style={dealPillStyle(r.deal_label)}>
@@ -347,6 +357,29 @@ function displayType(t: string | undefined): string {
   if (lower === "food and drink") return "Food & Drink";
   return t;
 }
+
+function formatDealWindow(r: HappyHourRow): string {
+  const sRaw = (r.start_time || "").trim();
+  const eRaw = (r.end_time || "").trim();
+
+  const sIsOpen = sRaw.toLowerCase() === "open";
+  const eIsClose = eRaw.toLowerCase() === "close";
+
+  const left = sIsOpen
+    ? r.open_time
+      ? `Open (${format12h(r.open_time)})`
+      : "Open"
+    : format12h(sRaw);
+
+  const right = eIsClose
+    ? r.close_time
+      ? `Close (${format12h(r.close_time)})`
+      : "Close"
+    : format12h(eRaw);
+
+  return `${left}–${right}`;
+}
+
 
 const cardStyle: React.CSSProperties = {
   background: "white",

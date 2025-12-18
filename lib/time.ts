@@ -1,37 +1,37 @@
 // lib/time.ts
-
 import type { HappyHourRow } from "./types";
 
 /**
- * Convert "HH:MM" (24-hour) into minutes after midnight.
- * Example: "15:30" -> 930
+ * Strict parse "HH:MM" into minutes after midnight.
+ * Returns NaN if the string isn't a real HH:MM.
  */
 export function minutesFromHHMM(hhmm: string): number {
   const v = (hhmm || "").trim();
-  if (!v) return Number.NaN;
+  const m = /^(\d{1,2}):(\d{2})$/.exec(v);
+  if (!m) return Number.NaN;
 
-  const [hStr, mStr] = v.split(":");
-  const h = Number(hStr);
-  const m = Number(mStr);
+  const h = Number(m[1]);
+  const mins = Number(m[2]);
+  if (
+    Number.isNaN(h) ||
+    Number.isNaN(mins) ||
+    h < 0 ||
+    h > 23 ||
+    mins < 0 ||
+    mins > 59
+  ) {
+    return Number.NaN;
+  }
 
-  if (!Number.isFinite(h) || !Number.isFinite(m)) return Number.NaN;
-  return h * 60 + m;
+  return h * 60 + mins;
 }
 
-/**
- * Format "HH:MM" (24-hour) into "h:MM AM/PM".
- * If hhmm is "Close", it returns "Close".
- */
 export function format12h(hhmm: string): string {
-  const v = (hhmm || "").trim();
-  if (!v) return "—";
-  if (v.toLowerCase() === "close") return "Close";
+  const total = minutesFromHHMM(hhmm);
+  if (Number.isNaN(total)) return "—";
 
-  const [hStr, mStr] = v.split(":");
-  let h = Number(hStr);
-  const m = Number(mStr);
-
-  if (!Number.isFinite(h) || !Number.isFinite(m)) return "—";
+  let h = Math.floor(total / 60);
+  const m = total % 60;
 
   const suffix = h >= 12 ? "PM" : "AM";
   h = h % 12;
@@ -41,43 +41,34 @@ export function format12h(hhmm: string): string {
   return `${h}:${mm} ${suffix}`;
 }
 
-/**
- * Resolve the "end time" minutes for a row.
- * - If end_time is a normal "HH:MM", use it.
- * - If end_time is "Close", use close_time.
- * - If end_time is "Close" but close_time is missing/invalid, return NaN.
- *
- * This ensures close_time only matters for the few "Close" rows.
- */
-export function endMinutesForRow(row: Pick<HappyHourRow, "end_time" | "close_time">): number {
-  const endRaw = (row.end_time || "").trim();
-  if (!endRaw) return Number.NaN;
+function resolvedStartHHMM(row: HappyHourRow): string {
+  const s = (row.start_time || "").trim();
+  if (s.toLowerCase() === "open") return (row.open_time || "").trim();
+  return s;
+}
 
-  if (endRaw.toLowerCase() === "close") {
-    const ct = (row.close_time || "").trim();
-    return minutesFromHHMM(ct);
-  }
-
-  return minutesFromHHMM(endRaw);
+function resolvedEndHHMM(row: HappyHourRow): string {
+  const e = (row.end_time || "").trim();
+  if (e.toLowerCase() === "close") return (row.close_time || "").trim();
+  return e;
 }
 
 /**
- * Check if a given row is "active" right now, based on its start/end time.
- * We ONLY care about the deal window, not full business hours.
- * Handles windows that cross midnight, like 9:00 PM – 1:30 AM.
- *
- * IMPORTANT:
- * - If end_time is "Close" and close_time is blank, this returns false.
+ * Deal window active right now (not business open hours).
+ * Supports "Open" + open_time and "Close" + close_time.
+ * Supports crossing midnight.
  */
 export function isOpenNow(row: HappyHourRow, now: Date): boolean {
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
-  const start = minutesFromHHMM(row.start_time);
-  let end = endMinutesForRow(row);
+  const startStr = resolvedStartHHMM(row);
+  const endStr = resolvedEndHHMM(row);
+
+  let start = minutesFromHHMM(startStr);
+  let end = minutesFromHHMM(endStr);
 
   if (Number.isNaN(start) || Number.isNaN(end)) return false;
 
-  // If the end is "earlier" than start, it crosses midnight.
   if (end < start) {
     const nowAdj = nowMinutes < start ? nowMinutes + 24 * 60 : nowMinutes;
     end += 24 * 60;

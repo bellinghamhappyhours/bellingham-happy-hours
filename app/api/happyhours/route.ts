@@ -46,50 +46,36 @@ export async function GET() {
     });
 
     const rows: HappyHourRow[] = (parsed.data as any[])
-      .map((r, idx) => {
+      .map((r) => {
         const venue_name = (r.venue_name || "").trim();
         const menu_url = (r.menu_url || "").trim();
 
-        if (!venue_name || !menu_url) {
-          return null;
-        }
+        if (!venue_name || !menu_url) return null;
 
-        // Normalize cuisines (comma-separated in the sheet)
         const cuisine_tags: string[] = (r.cuisine_tags || "")
           .split(",")
           .map((s: string) => s.trim())
           .filter(Boolean);
 
-        // Normalize/validate day_of_week
         const rawDay = (r.day_of_week || "").trim();
         const day = rawDay as DayOfWeek;
+        if (!VALID_DAYS.includes(day)) return null;
 
-        if (!VALID_DAYS.includes(day)) {
-          return null;
-        }
-
-        // Basic time strings, passed through as-is ("HH:MM") OR "Close"
         const start_time = (r.start_time || "").trim();
         const end_time = (r.end_time || "").trim();
 
-        if (!start_time || !end_time) {
-          return null;
-        }
+        // We still require start_time and end_time to exist,
+        // but they can now be "HH:MM" OR "Open"/"Close"
+        if (!start_time || !end_time) return null;
 
-        // Optional: only used when end_time === "Close"
+        const open_time = (r.open_time || "").trim() || undefined;
         const close_time = (r.close_time || "").trim() || undefined;
 
-        // Build a stable-ish id
         const id =
           (r.id as string) ||
-          [
-            venue_name,
-            day,
-            start_time,
-            end_time,
-            close_time || "",
-            (r.deal_label || "").trim(),
-          ].join("|");
+          [venue_name, day, start_time, end_time, (r.deal_label || "").trim()].join(
+            "|"
+          );
 
         const row: HappyHourRow = {
           id,
@@ -98,10 +84,13 @@ export async function GET() {
           cuisine_tags,
           menu_url,
           website_url: (r.website_url || "").trim() || undefined,
+
           day_of_week: day,
           start_time,
           end_time,
-          close_time, // <-- NEW (safe if undefined)
+          open_time,
+          close_time,
+
           type: (r.type || "").trim(),
           deal_label: (r.deal_label || "").trim() || undefined,
           notes: (r.notes || "").trim() || undefined,
