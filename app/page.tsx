@@ -347,7 +347,7 @@ export default function Page() {
       </div>
 
       <div style={{ marginBottom: 4 }}>
-        Instagram (under development):{" "}
+        Instagram:{" "}
         <a
           href="https://www.instagram.com/BHAMhappyhours/"
           target="_blank"
@@ -359,7 +359,7 @@ export default function Page() {
       </div>
 
       <div>
-        Beta: Hours & specials can change quickly. Please confirm details with the
+        Hours & specials can change quickly. Please confirm details with the
         venue.
       </div>
     </footer>
