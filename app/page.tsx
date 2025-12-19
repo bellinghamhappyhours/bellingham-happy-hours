@@ -336,6 +336,12 @@ export default function Page() {
       </div>
 
       <footer style={{ padding: "18px 2px", color: "#777", fontSize: 12 }}>
+      
+      <div>
+        Hours & specials can change quickly. Please confirm details with the
+        venue.
+      </div>
+      
       <div style={{ marginBottom: 4 }}>
         Corrections or menu updates?{" "}
         <a
@@ -358,10 +364,7 @@ export default function Page() {
         </a>
       </div>
 
-      <div>
-        Hours & specials can change quickly. Please confirm details with the
-        venue.
-      </div>
+
     </footer>
 
     </div>
