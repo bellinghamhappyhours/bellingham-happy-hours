@@ -337,7 +337,7 @@ export default function Page() {
 
       <footer style={{ padding: "18px 2px", color: "#777", fontSize: 12 }}>
       
-      <div>
+      <div style={{ marginBottom: 4 }}>
         Hours & specials can change quickly. Please confirm details with the
         venue.
       </div>
@@ -363,7 +363,6 @@ export default function Page() {
           @BHAMhappyhours
         </a>
       </div>
-
 
     </footer>
 
