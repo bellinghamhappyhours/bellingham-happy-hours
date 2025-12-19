@@ -246,75 +246,90 @@ export default function Page() {
         ) : (
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ textAlign: "left", fontSize: 12, color: "#666" }}>
-                  <th style={thStyle}>Save</th>
-                  <th style={thStyle}>Place</th>
-                  <th style={thStyle}>When</th>
-                  <th style={thStyle}>Deal</th>
-                  <th style={thStyle}>Type</th>
-                  <th style={thStyle}>Cuisine</th>
-                  <th style={thStyle}>Neighborhood</th>
-                  <th style={thStyle}>Links</th>
-                  <th style={thStyle}>Verified</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((r) => (
-                  <tr key={r.id} style={{ borderTop: "1px solid #eee" }}>
-                    <td style={tdStyle}>
-                      <button
-                        onClick={() => favorites.toggle(r.id)}
-                        aria-label="Save"
-                        style={iconButtonStyle}
-                      >
-                        {favorites.has(r.id) ? "♥" : "♡"}
-                      </button>
-                    </td>
-                    <td style={tdStyle}>
-                      <div style={{ fontWeight: 600 }}>{r.venue_name}</div>
-                    </td>
-                  
-                    <td style={tdStyle}>{formatDealWindow(r)}</td>
+  <thead>
+    <tr style={{ textAlign: "left", fontSize: 12, color: "#666" }}>
+      <th style={thStyle}>Save</th>
+      <th style={thStyle}>Place</th>
+      <th style={thStyle}>When</th>
+      <th style={thStyle}>Links</th>
+      <th style={thStyle}>Neighborhood</th>
+      <th style={thStyle}>Cuisine</th>
+      <th style={thStyle}>Deal</th>
+      <th style={thStyle}>Type</th>
+      <th style={thStyle}>Verified</th>
+    </tr>
+  </thead>
 
-                    <td style={tdStyle}>
-                      {r.deal_label ? (
-                        <span style={dealPillStyle(r.deal_label)}>
-                          {r.deal_label}
-                        </span>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td style={tdStyle}>{displayType(r.type)}</td>
-                    <td style={tdStyle}>{r.cuisine_tags.join(", ")}</td>
-                    <td style={tdStyle}>{r.neighborhood || "—"}</td>
-                    <td style={tdStyle}>
-                      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                        <a
-                          href={r.menu_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={linkStyle}
-                        >
-                          Menu
-                        </a>
-                        {r.website_url ? (
-                          <a
-                            href={r.website_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={linkStyle}
-                          >
-                            Website
-                          </a>
-                        ) : null}
-                      </div>
-                    </td>
-                    <td style={tdStyle}>{r.last_verified || "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
+  <tbody>
+    {filtered.map((r) => (
+      <tr key={r.id} style={{ borderTop: "1px solid #eee" }}>
+        {/* Save */}
+        <td style={tdStyle}>
+          <button
+            onClick={() => favorites.toggle(r.id)}
+            aria-label="Save"
+            style={iconButtonStyle}
+          >
+            {favorites.has(r.id) ? "♥" : "♡"}
+          </button>
+        </td>
+
+        {/* Place */}
+        <td style={tdStyle}>
+          <div style={{ fontWeight: 600 }}>{r.venue_name}</div>
+        </td>
+
+        {/* When */}
+        <td style={tdStyle}>{formatDealWindow(r)}</td>
+
+        {/* Links */}
+        <td style={tdStyle}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <a
+              href={r.menu_url}
+              target="_blank"
+              rel="noreferrer"
+              style={linkStyle}
+            >
+              Menu
+            </a>
+            {r.website_url ? (
+              <a
+                href={r.website_url}
+                target="_blank"
+                rel="noreferrer"
+                style={linkStyle}
+              >
+                Website
+              </a>
+            ) : null}
+          </div>
+        </td>
+
+        {/* Neighborhood */}
+        <td style={tdStyle}>{r.neighborhood || "—"}</td>
+
+        {/* Cuisine */}
+        <td style={tdStyle}>{r.cuisine_tags.join(", ")}</td>
+
+        {/* Deal */}
+        <td style={tdStyle}>
+          {r.deal_label ? (
+            <span style={dealPillStyle(r.deal_label)}>{r.deal_label}</span>
+          ) : (
+            "—"
+          )}
+        </td>
+
+        {/* Type */}
+        <td style={tdStyle}>{displayType(r.type)}</td>
+
+        {/* Verified */}
+        <td style={tdStyle}>{r.last_verified || "—"}</td>
+      </tr>
+    ))}
+  </tbody>
+
             </table>
           </div>
         )}
