@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Filters from "../components/Filters";
 import { useFavorites } from "../components/useFavorites";
 import type { HappyHourRow, DayOfWeek, HHType } from "../lib/types";
@@ -18,6 +18,8 @@ const DAY_NAMES: DayOfWeek[] = [
   "Friday",
   "Saturday",
 ] as unknown as DayOfWeek[];
+
+const getTodayDayOfWeek = (): DayOfWeek => DAY_NAMES[new Date().getDay()];
 
 function normalizeDayName(v: string | undefined | null): string {
   return (v || "").trim().toLowerCase();
@@ -49,6 +51,8 @@ export default function Page() {
   const [timeHHMM, setTimeHHMM] = useState("17:00"); // 5:00 PM
   const [showAllForDay, setShowAllForDay] = useState(true);
   const [showSavedOnly, setShowSavedOnly] = useState(false);
+  const didMountTime = useRef(false);
+
 
   useEffect(() => {
     (async () => {
@@ -61,6 +65,27 @@ export default function Page() {
       }
     })();
   }, []);
+
+  // If the user turns on "Right now", automatically turn off "Show All for Day"
+useEffect(() => {
+  if (timeMode === "now" && showAllForDay) {
+    setShowAllForDay(false);
+  }
+}, [timeMode, showAllForDay]);
+
+// If the user changes the custom time picker, automatically turn off "Show All for Day"
+useEffect(() => {
+  // Skip the first run on page load
+  if (!didMountTime.current) {
+    didMountTime.current = true;
+    return;
+  }
+
+  if (timeMode === "custom" && showAllForDay) {
+    setShowAllForDay(false);
+  }
+}, [timeHHMM, timeMode, showAllForDay]);
+
 
   const allCuisines = useMemo(() => {
     const s = new Set<string>();
