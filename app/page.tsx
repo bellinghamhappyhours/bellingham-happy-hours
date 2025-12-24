@@ -53,8 +53,11 @@ export default function Page() {
   const [showSavedOnly, setShowSavedOnly] = useState(false);
   const prevTimeMode = useRef(timeMode);
   const prevTimeHHMM = useRef(timeHHMM);
-
-
+  const showAllRef = useRef(showAllForDay);
+  
+  useEffect(() => {
+    showAllRef.current = showAllForDay;
+  }, [showAllForDay]);
 
   useEffect(() => {
     (async () => {
@@ -73,7 +76,7 @@ export default function Page() {
     const timeChanged = prevTimeHHMM.current !== timeHHMM;
   
     // Only auto-disable Show All when the user changes time-related controls
-    if (showAllForDay) {
+    if (showAllRef.current) {
       if (modeChanged && timeMode === "now") {
         setShowAllForDay(false);
       } else if (timeChanged && timeMode === "custom") {
@@ -83,7 +86,8 @@ export default function Page() {
   
     prevTimeMode.current = timeMode;
     prevTimeHHMM.current = timeHHMM;
-  }, [timeMode, timeHHMM, showAllForDay]);
+  }, [timeMode, timeHHMM]);
+  
   
 
   const allCuisines = useMemo(() => {
@@ -112,23 +116,26 @@ export default function Page() {
       // 1) Day match – case-insensitive + trimmed on BOTH sides
       .filter((r) => normalizeDayName(r.day_of_week) === normEffective)
 
+
+      //disabling type for now 
       // 2) Type filter: any | Food | Drink | Food and Drink
-      .filter((r) => {
-        if (type === "any") return true;
+      // .filter((r) => {
+      //   if (type === "any") return true;
 
-        const rowType = (r.type || "").toLowerCase();
+      //   const rowType = (r.type || "").toLowerCase();
 
-        if (type === "Food") {
-          return rowType.includes("food") && !rowType.includes("drink");
-        }
-        if (type === "Drink") {
-          return rowType.includes("drink") && !rowType.includes("food");
-        }
-        if (type === "Food and Drink") {
-          return rowType.includes("food") && rowType.includes("drink");
-        }
-        return true;
-      })
+      //   if (type === "Food") {
+      //     return rowType.includes("food") && !rowType.includes("drink");
+      //   }
+      //   if (type === "Drink") {
+      //     return rowType.includes("drink") && !rowType.includes("food");
+      //   }
+      //   if (type === "Food and Drink") {
+      //     return rowType.includes("food") && rowType.includes("drink");
+      //   }
+      //   return true;
+      // })
+    
 
       // 3) Cuisine filter
       .filter((r) => (cuisine ? r.cuisine_tags.includes(cuisine) : true))
@@ -405,14 +412,18 @@ function formatDealWindow(r: HappyHourRow): string {
   const sRaw = (r.start_time || "").trim();
   const eRaw = (r.end_time || "").trim();
 
-  const sIsOpen = sRaw.toLowerCase() === "open";
-  const eIsClose = eRaw.toLowerCase() === "close";
+  const sLower = sRaw.toLowerCase();
+  const eLower = eRaw.toLowerCase();
 
-  const left = sIsOpen ? "Open" : format12h(sRaw);
-  const right = eIsClose ? "Close" : format12h(eRaw);
+  const left =
+    sLower === "open" ? "Open" : sRaw ? format12h(sRaw) : "—";
+
+  const right =
+    eLower === "close" ? "Close" : eRaw ? format12h(eRaw) : "—";
 
   return `${left} - ${right}`;
 }
+
 
 
 
