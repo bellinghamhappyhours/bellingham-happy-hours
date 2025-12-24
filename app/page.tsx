@@ -51,7 +51,9 @@ export default function Page() {
   const [timeHHMM, setTimeHHMM] = useState("17:00"); // 5:00 PM
   const [showAllForDay, setShowAllForDay] = useState(true);
   const [showSavedOnly, setShowSavedOnly] = useState(false);
-  const didMountTime = useRef(false);
+  const prevTimeMode = useRef(timeMode);
+  const prevTimeHHMM = useRef(timeHHMM);
+
 
 
   useEffect(() => {
@@ -66,26 +68,23 @@ export default function Page() {
     })();
   }, []);
 
-  // If the user turns on "Right now", automatically turn off "Show All for Day"
-useEffect(() => {
-  if (timeMode === "now" && showAllForDay) {
-    setShowAllForDay(false);
-  }
-}, [timeMode, showAllForDay]);
-
-// If the user changes the custom time picker, automatically turn off "Show All for Day"
-useEffect(() => {
-  // Skip the first run on page load
-  if (!didMountTime.current) {
-    didMountTime.current = true;
-    return;
-  }
-
-  if (timeMode === "custom" && showAllForDay) {
-    setShowAllForDay(false);
-  }
-}, [timeHHMM, timeMode, showAllForDay]);
-
+  useEffect(() => {
+    const modeChanged = prevTimeMode.current !== timeMode;
+    const timeChanged = prevTimeHHMM.current !== timeHHMM;
+  
+    // Only auto-disable Show All when the user changes time-related controls
+    if (showAllForDay) {
+      if (modeChanged && timeMode === "now") {
+        setShowAllForDay(false);
+      } else if (timeChanged && timeMode === "custom") {
+        setShowAllForDay(false);
+      }
+    }
+  
+    prevTimeMode.current = timeMode;
+    prevTimeHHMM.current = timeHHMM;
+  }, [timeMode, timeHHMM, showAllForDay]);
+  
 
   const allCuisines = useMemo(() => {
     const s = new Set<string>();
