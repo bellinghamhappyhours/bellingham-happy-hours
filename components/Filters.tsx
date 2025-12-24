@@ -119,6 +119,8 @@ export default function Filters({
           </select>
         </div>
 
+{/* Type filter temporarily hidden until dataset grows */}
+{/*
         <div className="field">
           <label className="fieldLabel">Type</label>
           <select
@@ -133,6 +135,7 @@ export default function Filters({
             ))}
           </select>
         </div>
+*/}
 
         <div className="field">
           <label className="fieldLabel">Cuisine</label>
