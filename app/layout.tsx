@@ -1,16 +1,30 @@
 import Script from "next/script";
-import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Inter } from "next/font/google";
+import type { Metadata, Viewport } from "next";
 
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",
 });
 
+const siteTitle = process.env.NEXT_PUBLIC_SITE_TITLE ?? "Happy Hours";
+const siteDescription =
+  process.env.NEXT_PUBLIC_SITE_DESCRIPTION ??
+  "Find happy hours by day, time, and cuisine.";
+
 export const metadata: Metadata = {
-  title: "Bellingham Happy Hours",
-  description: "Find happy hours in Bellingham by day, time, and cuisine.",
+  title: siteTitle,
+  description: siteDescription,
+  icons: {
+    icon: process.env.NEXT_PUBLIC_ICON_PATH ?? "/icons/bellingham/icon.png",
+    apple:
+      process.env.NEXT_PUBLIC_APPLE_ICON_PATH ??
+      "/icons/bellingham/apple-icon.png",
+    shortcut:
+      process.env.NEXT_PUBLIC_FAVICON_ICO_PATH ??
+      "/icons/bellingham/favicon.ico",
+  },
 };
 
 export const viewport: Viewport = {
