@@ -8,6 +8,10 @@ const inter = Inter({
   display: "swap",
 });
 
+// REGION controls which icon folder to use: public/icons/<region>/...
+// Set REGION in each Vercel project: "bellingham" or "skagit"
+const region = (process.env.REGION ?? "bellingham").toLowerCase();
+
 const siteTitle = process.env.NEXT_PUBLIC_SITE_TITLE ?? "Happy Hours";
 const siteDescription =
   process.env.NEXT_PUBLIC_SITE_DESCRIPTION ??
@@ -17,10 +21,10 @@ export const metadata: Metadata = {
   title: siteTitle,
   description: siteDescription,
   icons: {
-    icon: process.env.NEXT_PUBLIC_ICON_PATH ?? "/icons/default/icon.png",
-    apple: process.env.NEXT_PUBLIC_APPLE_ICON_PATH ?? "/icons/default/apple-icon.png",
-    shortcut: process.env.NEXT_PUBLIC_FAVICON_ICO_PATH ?? "/favicon.ico",
-  },    
+    icon: `/icons/${region}/icon.png`,
+    apple: `/icons/${region}/apple-icon.png`,
+    shortcut: `/icons/${region}/favicon.ico`,
+  },
 };
 
 export const viewport: Viewport = {
