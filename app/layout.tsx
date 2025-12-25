@@ -17,13 +17,11 @@ export const metadata: Metadata = {
   title: siteTitle,
   description: siteDescription,
   icons: {
-    icon: process.env.NEXT_PUBLIC_ICON_PATH ?? "/icons/bellingham/icon.png",
+    icon: process.env.NEXT_PUBLIC_ICON_PATH ?? "/icons/default/icon.png",
     apple:
-      process.env.NEXT_PUBLIC_APPLE_ICON_PATH ??
-      "/icons/bellingham/apple-icon.png",
+      process.env.NEXT_PUBLIC_APPLE_ICON_PATH ?? "/icons/default/apple-icon.png",
     shortcut:
-      process.env.NEXT_PUBLIC_FAVICON_ICO_PATH ??
-      "/icons/bellingham/favicon.ico",
+      process.env.NEXT_PUBLIC_FAVICON_ICO_PATH ?? "/icons/default/favicon.ico",
   },
 };
 
