@@ -6,6 +6,12 @@ import { useFavorites } from "../components/useFavorites";
 import type { HappyHourRow, DayOfWeek, HHType } from "../lib/types";
 import { format12h, isOpenNow, minutesFromHHMM } from "../lib/time";
 
+const SITE_TITLE = process.env.NEXT_PUBLIC_SITE_TITLE ?? "Happy Hours";
+const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "";
+const INSTAGRAM_HANDLE = process.env.NEXT_PUBLIC_INSTAGRAM_HANDLE ?? "";
+const INSTAGRAM_URL = process.env.NEXT_PUBLIC_INSTAGRAM_URL ?? "";
+const FOOTER_NOTE = process.env.NEXT_PUBLIC_FOOTER_NOTE ?? "";
+
 type ApiResponse = { rows: HappyHourRow[] };
 
 // For mapping "Today" to a sheet day name
