@@ -14,14 +14,6 @@ const FOOTER_NOTE = process.env.NEXT_PUBLIC_FOOTER_NOTE ?? "";
 
 type ApiResponse = { rows: HappyHourRow[] };
 
-//temporary banner for debug
-<div style={{ padding: 12, border: "1px solid #ccc", marginBottom: 12 }}>
-  <div>NEXT_PUBLIC_SITE_TITLE: {process.env.NEXT_PUBLIC_SITE_TITLE}</div>
-  <div>NEXT_PUBLIC_CONTACT_EMAIL: {process.env.NEXT_PUBLIC_CONTACT_EMAIL}</div>
-  <div>NEXT_PUBLIC_INSTAGRAM_URL: {process.env.NEXT_PUBLIC_INSTAGRAM_URL}</div>
-</div>
-
-
 
 // For mapping "Today" to a sheet day name
 const DAY_NAMES: DayOfWeek[] = [
@@ -225,7 +217,7 @@ export default function Page() {
           marginBottom: 16,
         }}
       >
-        <h1 style={{ margin: 0, fontSize: 28 }}>Bellingham Happy Hours</h1>
+        <h1 style={{ margin: 0, fontSize: 28 }}>{SITE_TITLE}</h1>
         <div style={{ color: "#555", fontSize: 14 }}>
           Filter by day, time, and cuisine. Menu links go straight to the source.
         </div>
@@ -388,27 +380,33 @@ export default function Page() {
         venue.
       </div>
       
-      <div style={{ marginBottom: 4 }}>
-        Corrections or menu updates?{" "}
-        <a
-          href="mailto:bellinghamhappyhours@gmail.com"
-          style={{ color: "#111", textDecoration: "underline" }}
-        >
-          bellinghamhappyhours@gmail.com
-        </a>
-      </div>
+      {CONTACT_EMAIL ? (
+  <div style={{ marginBottom: 4 }}>
+    Corrections or menu updates?{" "}
+    <a
+      href={`mailto:${CONTACT_EMAIL}`}
+      style={{ color: "#111", textDecoration: "underline" }}
+    >
+      {CONTACT_EMAIL}
+    </a>
+  </div>
+) : null}
 
-      <div style={{ marginBottom: 4 }}>
-        Instagram:{" "}
-        <a
-          href="https://www.instagram.com/BHAMhappyhours/"
-          target="_blank"
-          rel="noreferrer"
-          style={{ color: "#111", textDecoration: "underline" }}
-        >
-          @BHAMhappyhours
-        </a>
-      </div>
+
+      {INSTAGRAM_URL ? (
+  <div style={{ marginBottom: 4 }}>
+    Instagram:{" "}
+    <a
+      href={INSTAGRAM_URL}
+      target="_blank"
+      rel="noreferrer"
+      style={{ color: "#111", textDecoration: "underline" }}
+    >
+      {INSTAGRAM_HANDLE ? `@${INSTAGRAM_HANDLE.replace(/^@/, "")}` : "Instagram"}
+    </a>
+  </div>
+) : null}
+
 
     </footer>
 
