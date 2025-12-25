@@ -14,6 +14,15 @@ const FOOTER_NOTE = process.env.NEXT_PUBLIC_FOOTER_NOTE ?? "";
 
 type ApiResponse = { rows: HappyHourRow[] };
 
+//temporary banner for debug
+<div style={{ padding: 12, border: "1px solid #ccc", marginBottom: 12 }}>
+  <div>NEXT_PUBLIC_SITE_TITLE: {process.env.NEXT_PUBLIC_SITE_TITLE}</div>
+  <div>NEXT_PUBLIC_CONTACT_EMAIL: {process.env.NEXT_PUBLIC_CONTACT_EMAIL}</div>
+  <div>NEXT_PUBLIC_INSTAGRAM_URL: {process.env.NEXT_PUBLIC_INSTAGRAM_URL}</div>
+</div>
+
+
+
 // For mapping "Today" to a sheet day name
 const DAY_NAMES: DayOfWeek[] = [
   "Sunday",
