@@ -2,6 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 const region = process.env.REGION || "default";
+console.log("apply-icons.mjs REGION =", region);
+console.log("apply-icons.mjs VERCEL_ENV =", process.env.VERCEL_ENV);
 const fromDir = path.join(process.cwd(), "public", "icons", region);
 const toDir = path.join(process.cwd(), "public");
 
