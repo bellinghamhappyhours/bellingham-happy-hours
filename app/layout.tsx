@@ -17,10 +17,10 @@ export const metadata: Metadata = {
   title: siteTitle,
   description: siteDescription,
   icons: {
-    icon: "/icon.png",
-    apple: "/apple-icon.png",
-    shortcut: "/favicon.ico",
-  },  
+    icon: process.env.NEXT_PUBLIC_ICON_PATH ?? "/icons/default/icon.png",
+    apple: process.env.NEXT_PUBLIC_APPLE_ICON_PATH ?? "/icons/default/apple-icon.png",
+    shortcut: process.env.NEXT_PUBLIC_FAVICON_ICO_PATH ?? "/favicon.ico",
+  },    
 };
 
 export const viewport: Viewport = {
