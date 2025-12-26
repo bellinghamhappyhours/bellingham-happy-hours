@@ -16,6 +16,13 @@ const VALID_DAYS: DayOfWeek[] = [
   "Sunday",
 ];
 
+function normalizeUrl(v: string): string {
+  const s = (v || "").trim();
+  if (!s) return "";
+  if (/^https?:\/\//i.test(s)) return s;
+  return `https://${s}`;
+}
+
 function normalizeTime(v: string): string {
   const raw = (v || "").trim();
   if (!raw) return "";
@@ -72,11 +79,12 @@ export async function GET() {
         const venue_name = (r.venue_name || "").trim();
         if (!venue_name) return null;
 
-        const menu_url = (r.menu_url || "").trim();
-        const website_url = (r.website_url || "").trim();
+        // ✅ Normalize URLs so "www.google.com" becomes "https://www.google.com"
+        const menu_url_norm = normalizeUrl(r.menu_url || "");
+        const website_url_norm = normalizeUrl(r.website_url || "");
 
         // Require at least one link so the row is actionable
-        if (!menu_url && !website_url) return null;
+        if (!menu_url_norm && !website_url_norm) return null;
 
         const cuisine_tags: string[] = (r.cuisine_tags || "")
           .split(",")
@@ -121,8 +129,10 @@ export async function GET() {
           venue_name,
           neighborhood: (r.neighborhood || "").trim(),
           cuisine_tags,
-          menu_url: menu_url || website_url, // fallback so the UI Menu link works
-          website_url: website_url || undefined,
+
+          // ✅ Use normalized URLs. If menu URL missing, fall back to website URL.
+          menu_url: menu_url_norm || website_url_norm,
+          website_url: website_url_norm || undefined,
 
           day_of_week: day,
           start_time,
