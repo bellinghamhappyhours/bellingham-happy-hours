@@ -382,7 +382,7 @@ export default function Page() {
       
       {CONTACT_EMAIL ? (
   <div style={{ marginBottom: 4 }}>
-    Corrections or menu updates?{" "}
+    Corrections, suggestions or menu updates?{" "}
     <a
       href={`mailto:${CONTACT_EMAIL}`}
       style={{ color: "#111", textDecoration: "underline" }}
